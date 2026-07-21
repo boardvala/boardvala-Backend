@@ -7,25 +7,33 @@ exports.createGalleryDesign = async (req, res) => {
     // Upload all images to Cloudinary
     const images = await Promise.all(
       req.files.map(async (file) => {
-        const result = await uploadToCloudinary(
-          file,
-          "boardvala/gallery"
-        );
+        const result = await uploadToCloudinary(file, "boardvala/gallery");
 
         return {
           url: result.secure_url,
           publicId: result.public_id,
         };
-      })
+      }),
     );
 
     const design = await GalleryDesign.create({
       title: req.body.title,
+
       description: req.body.description,
+
       category: req.body.category,
-      price: req.body.price,
+
+      // Acrylic & Steel use single price
+      price: req.body.category === "Wooden" ? null : req.body.price,
+
+      // Wooden uses frame-wise pricing
+      framePrices:
+        req.body.category === "Wooden" ? JSON.parse(req.body.framePrices) : [],
+
       featured: req.body.featured === "true",
+
       active: req.body.active === "true",
+
       images,
     });
 
@@ -98,7 +106,7 @@ exports.getSimilarGalleryDesigns = async (req, res) => {
   try {
     // Find current design
     const currentDesign = await GalleryDesign.findById(req.params.id);
-   
+
     if (!currentDesign) {
       return res.status(404).json({
         message: "Design not found",

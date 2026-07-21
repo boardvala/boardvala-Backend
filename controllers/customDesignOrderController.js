@@ -18,8 +18,6 @@ exports.createCustomDesignOrder = async (req, res) => {
 
     const {
       frameSize,
-      material,
-      plateType,
       instructions,
       customerName,
       customerPhone,
@@ -36,10 +34,6 @@ exports.createCustomDesignOrder = async (req, res) => {
       },
 
       frameSize,
-
-      material,
-
-      plateType,
 
       instructions,
 
@@ -131,5 +125,70 @@ exports.updateCustomDesignStatus = async (req, res) => {
       success: false,
       message: err.message,
     });
+  }
+};
+
+exports.getMyCustomDesignOrders = async (req, res) => {
+  try {
+    const orders = await CustomDesignOrder.find({
+      user: req.user._id,
+    }).sort({
+      createdAt: -1,
+    });
+
+
+    res.status(200).json({
+      success: true,
+      orders,
+    });
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch your custom design orders",
+    });
+
+  }
+};
+
+
+
+exports.getMyCustomDesignOrderById = async (req, res) => {
+  try {
+
+    const order = await CustomDesignOrder.findOne({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
+
+    if (!order) {
+
+      return res.status(404).json({
+        success: false,
+        message: "Custom design order not found",
+      });
+
+    }
+
+
+    res.status(200).json({
+      success: true,
+      order,
+    });
+
+
+  } catch (err) {
+
+    console.log(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch order details",
+    });
+
   }
 };

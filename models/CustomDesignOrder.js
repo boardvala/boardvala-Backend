@@ -25,15 +25,18 @@ const customDesignOrderSchema = new mongoose.Schema(
       required: true,
     },
 
+     // Admin will assign this later
     material: {
       type: String,
-      required: true,
+      enum: ["", "Acrylic", "Wooden", "Steel"],
+      default: "",
     },
 
+    // Currently every custom order is 2D
     plateType: {
       type: String,
-      enum: ["2D", "3D"],
-      required: true,
+      enum: ["2D"],
+      default: "2D",
     },
 
     instructions: {

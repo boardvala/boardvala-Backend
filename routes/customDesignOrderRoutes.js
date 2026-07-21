@@ -8,6 +8,8 @@ const {
   getAllCustomDesignOrders,
   getCustomDesignOrderById,
   updateCustomDesignStatus,
+  getMyCustomDesignOrders,
+  getMyCustomDesignOrderById,
 } = require("../controllers/customDesignOrderController");
 
 router.post(
@@ -18,6 +20,18 @@ router.post(
 );
 
 router.get("/", getAllCustomDesignOrders);
+
+router.get(
+  "/my-orders",
+  authMiddleware,
+  getMyCustomDesignOrders
+);
+
+router.get(
+  "/my-orders/:id",
+  authMiddleware,
+  getMyCustomDesignOrderById
+);
 
 router.get("/:id", getCustomDesignOrderById);
 
