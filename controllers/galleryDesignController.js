@@ -23,13 +23,6 @@ exports.createGalleryDesign = async (req, res) => {
 
       category: req.body.category,
 
-      // Acrylic & Steel use single price
-      price: req.body.category === "Wooden" ? null : req.body.price,
-
-      // Wooden uses frame-wise pricing
-      framePrices:
-        req.body.category === "Wooden" ? JSON.parse(req.body.framePrices) : [],
-
       featured: req.body.featured === "true",
 
       active: req.body.active === "true",
@@ -127,7 +120,6 @@ exports.getSimilarGalleryDesigns = async (req, res) => {
       id: design._id,
       type: "gallery",
       name: design.title,
-      price: design.price,
       previewImage: design.images[0],
       category: design.category,
     }));

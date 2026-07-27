@@ -15,7 +15,6 @@ const {
 router.post(
   "/",
   authMiddleware,
-  upload.single("designFile"),
   createCustomDesignOrder
 );
 

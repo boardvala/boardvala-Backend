@@ -14,6 +14,8 @@ const userRoutes = require("./routes/userRoutes");
 const customDesignOrderRoutes =  require("./routes/customDesignOrderRoutes");
 const galleryDesignRoutes = require("./routes/galleryDesignRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const pricingRoutes = require("./routes/pricingRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 app.use(cors());
 
@@ -29,6 +31,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/customDesign", customDesignOrderRoutes);
 app.use("/api/gallery", galleryDesignRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/pricing", pricingRoutes);
+app.use("/api/payment", paymentRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

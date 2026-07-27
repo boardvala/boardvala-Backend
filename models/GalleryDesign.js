@@ -1,20 +1,5 @@
 const mongoose = require("mongoose");
 
-const framePriceSchema = new mongoose.Schema(
-  {
-    frameSize: {
-      type: String,
-      required: true,
-    },
-
-    price: {
-      type: Number,
-      required: true,
-    },
-  },
-  { _id: false }
-);
-
 const galleryDesignSchema = new mongoose.Schema(
   {
     title: {
@@ -34,15 +19,6 @@ const galleryDesignSchema = new mongoose.Schema(
       required: true,
       enum: ["Acrylic", "Wooden", "Steel"],
     },
-
-    // Used for Acrylic & Steel
-    price: {
-      type: Number,
-      default: null,
-    },
-
-    // Used only for Wooden
-    framePrices: [framePriceSchema],
 
     images: [
       {

@@ -25,7 +25,18 @@ const customDesignOrderSchema = new mongoose.Schema(
       required: true,
     },
 
-     // Admin will assign this later
+    orientation: {
+      type: String,
+      enum: ["Landscape", "Portrait"],
+      required: true,
+    },
+
+    price: {
+      type: Number,
+      required: true,
+    },
+
+    // Admin will assign this later
     material: {
       type: String,
       enum: ["", "Acrylic", "Wooden", "Steel"],
@@ -68,6 +79,12 @@ const customDesignOrderSchema = new mongoose.Schema(
       type: String,
       enum: ["Pending", "Processing", "Completed", "Cancelled"],
       default: "Pending",
+    },
+
+    payment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payment",
+      required: true,
     },
   },
   {
