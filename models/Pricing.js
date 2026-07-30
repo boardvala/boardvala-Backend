@@ -20,7 +20,7 @@ const pricingSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      enum: ["Acrylic", "Wooden", "Steel"],
+      enum: ["MDF", "Acrylic", "Sunboard", "Vinyl"],
     },
 
     framePrices: [framePriceSchema],

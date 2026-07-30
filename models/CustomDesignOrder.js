@@ -36,11 +36,11 @@ const customDesignOrderSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Admin will assign this later
+    // Customer selects this at upload time
     material: {
       type: String,
-      enum: ["", "Acrylic", "Wooden", "Steel"],
-      default: "",
+      enum: ["MDF", "Acrylic", "Sunboard", "Vinyl"],
+      required: true,
     },
 
     // Currently every custom order is 2D

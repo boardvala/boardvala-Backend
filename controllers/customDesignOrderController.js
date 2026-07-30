@@ -8,6 +8,7 @@ exports.createCustomDesignOrder = async (req, res) => {
       previewImage, // base64 data URL (data:image/png;base64,....)
       frameSize,
       orientation,
+      material,
       instructions,
       customerName,
       customerPhone,
@@ -15,7 +16,7 @@ exports.createCustomDesignOrder = async (req, res) => {
       customerAddress,
       payment,
     } = req.body;
- 
+
     // --- basic validation ---
     if (!previewImage) {
       return res.status(400).json({
@@ -23,59 +24,67 @@ exports.createCustomDesignOrder = async (req, res) => {
         message: "Design preview is required.",
       });
     }
- 
+
     if (!frameSize) {
       return res.status(400).json({
         success: false,
         message: "Frame size is required.",
       });
     }
- 
+
+    if (!material) {
+      return res.status(400).json({
+        success: false,
+        message: "Material is required.",
+      });
+    }
+
     if (!customerName || !customerPhone || !customerAddress) {
       return res.status(400).json({
         success: false,
         message: "Customer name, phone and address are required.",
       });
     }
- 
+
     if (!payment) {
       return res.status(400).json({
         success: false,
         message: "Payment reference is required.",
       });
     }
- 
+
     // --- duplicate guard ---
     const existingOrder = await CustomDesignOrder.findOne({ payment });
- 
+
     if (existingOrder) {
       return res.status(400).json({
         success: false,
         message: "Order already exists for this payment.",
       });
     }
- 
-    // --- price: frontend कडून नाही, database मधून (payment सारख्याच helper ने) ---
-    const price = await getPriceForFrameSize(frameSize);
- 
+
+    // --- price: frontend कडून नाही, database मधून (material + frameSize नुसार) ---
+    // getPriceForFrameSize आतमध्ये material वैध आहे का तपासतो.
+    const price = await getPriceForFrameSize(frameSize, material);
+
     // --- base64 design Cloudinary वर upload ---
     // uploadToCloudinary base64 data URL स्वीकारतो असे गृहीत.
-    // (जर ती फक्त file/buffer घेत असेल, तर खाली टीप बघा.)
     const fileResult = await uploadToCloudinary(
       previewImage,
       "boardvala/custom-designs",
     );
- 
+
     const order = await CustomDesignOrder.create({
       user: req.user ? req.user._id : null,
- 
+
       designFile: {
         url: fileResult.secure_url,
         publicId: fileResult.public_id,
       },
- 
+
       frameSize,
       orientation,
+      material,
       price, // <-- database मधून, सुरक्षित
       instructions,
       customerName,
@@ -84,7 +93,7 @@ exports.createCustomDesignOrder = async (req, res) => {
       customerAddress,
       payment,
     });
- 
+
     res.status(201).json({
       success: true,
       message: "Custom Design Order Submitted Successfully.",
@@ -92,14 +101,13 @@ exports.createCustomDesignOrder = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
- 
+
     res.status(500).json({
       success: false,
       message: err.message,
     });
   }
 };
-
 exports.getAllCustomDesignOrders = async (req, res) => {
   try {
     const orders = await CustomDesignOrder.find().sort({
