@@ -36,6 +36,12 @@ const customDesignOrderSchema = new mongoose.Schema(
       required: true,
     },
 
+    quantity: {
+      type: Number,
+      required: true,
+      default: 1,
+    },
+
     // Customer selects this at upload time
     material: {
       type: String,

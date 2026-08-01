@@ -32,33 +32,28 @@ exports.getPriceForFrameSize = getPriceForFrameSize;
 
 exports.createPaymentOrder = async (req, res) => {
   try {
-    const { frameSize, material } = req.body;
+    const { items } = req.body;
 
-    if (!frameSize) {
+    if (!items || items.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Frame size is required.",
+        message: "Cart is empty.",
       });
     }
 
-    if (!material) {
-      return res.status(400).json({
-        success: false,
-        message: "Material is required.",
-      });
+    let total = 0;
+
+    for (const item of items) {
+      const price = await getPriceForFrameSize(item.frameSize, item.material);
+
+      total += price * item.quantity;
     }
-
-    // frontend ने amount पाठवला तरी तो पूर्णपणे दुर्लक्षित.
-    // किंमत फक्त database मधून, निवडलेल्या material नुसार.
-    const price = await getPriceForFrameSize(frameSize, material);
-
     const options = {
-      amount: Math.round(price * 100), // रुपये -> पैसे
+      amount: Math.round(total * 100), // रुपये -> पैसे
       currency: "INR",
       receipt: `receipts_${Date.now()}`,
       notes: {
-        frameSize,
-        material,
+        itemCount: items.length,
       },
     };
 

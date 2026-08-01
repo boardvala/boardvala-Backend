@@ -10,6 +10,7 @@ exports.createCustomDesignOrder = async (req, res) => {
       orientation,
       material,
       instructions,
+      quantity,
       customerName,
       customerPhone,
       customerEmail,
@@ -52,17 +53,6 @@ exports.createCustomDesignOrder = async (req, res) => {
         message: "Payment reference is required.",
       });
     }
-
-    // --- duplicate guard ---
-    const existingOrder = await CustomDesignOrder.findOne({ payment });
-
-    if (existingOrder) {
-      return res.status(400).json({
-        success: false,
-        message: "Order already exists for this payment.",
-      });
-    }
-
     // --- price: frontend कडून नाही, database मधून (material + frameSize नुसार) ---
     // getPriceForFrameSize आतमध्ये material वैध आहे का तपासतो.
     const price = await getPriceForFrameSize(frameSize, material);
@@ -86,6 +76,7 @@ exports.createCustomDesignOrder = async (req, res) => {
       orientation,
       material,
       price, // <-- database मधून, सुरक्षित
+      quantity,
       instructions,
       customerName,
       customerPhone,
@@ -108,6 +99,7 @@ exports.createCustomDesignOrder = async (req, res) => {
     });
   }
 };
+
 exports.getAllCustomDesignOrders = async (req, res) => {
   try {
     const orders = await CustomDesignOrder.find().sort({
