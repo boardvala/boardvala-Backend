@@ -30,10 +30,10 @@ router.put("/:material/frame/:frameSize", authMiddleware, updateFrameSize);
 // Existing
 router.post("/", authMiddleware, createPricing);
 
-router.get("/", authMiddleware, getPricing);
+router.get("/",  getPricing);
 
-router.get("/:material", authMiddleware, getPricingByMaterial);
+router.get("/:material",  getPricingByMaterial);
 
-router.put("/:material", authMiddleware, updatePricing);
+router.put("/:material",  authMiddleware, updatePricing);
 
 module.exports = router;
