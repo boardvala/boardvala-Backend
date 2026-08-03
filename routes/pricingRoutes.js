@@ -1,5 +1,5 @@
 const express = require("express");
-
+const authMiddleware = require("../middleware/authMiddleware");
 const router = express.Router();
 
 const {
@@ -16,24 +16,24 @@ const {
 } = require("../controllers/pricingController");
 
 // Material
-router.post("/material", createMaterial);
+router.post("/material", authMiddleware, createMaterial);
 
-router.delete("/material/:material", deleteMaterial);
+router.delete("/material/:material", authMiddleware, deleteMaterial);
 
 // Frame Size
-router.post("/:material/frame", addFrameSize);
+router.post("/:material/frame", authMiddleware, addFrameSize);
 
-router.delete("/:material/frame/:frameSize", deleteFrameSize);
+router.delete("/:material/frame/:frameSize", authMiddleware, deleteFrameSize);
 
-router.put("/:material/frame/:frameSize", updateFrameSize);
+router.put("/:material/frame/:frameSize", authMiddleware, updateFrameSize);
 
 // Existing
-router.post("/", createPricing);
+router.post("/", authMiddleware, createPricing);
 
-router.get("/", getPricing);
+router.get("/", authMiddleware, getPricing);
 
-router.get("/:material", getPricingByMaterial);
+router.get("/:material", authMiddleware, getPricingByMaterial);
 
-router.put("/:material", updatePricing);
+router.put("/:material", authMiddleware, updatePricing);
 
 module.exports = router;
