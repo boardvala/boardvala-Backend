@@ -17,7 +17,7 @@ exports.createCustomDesignOrder = async (req, res) => {
       customerAddress,
       payment,
     } = req.body;
-
+     
     // --- basic validation ---
     if (!previewImage) {
       return res.status(400).json({
@@ -64,8 +64,10 @@ exports.createCustomDesignOrder = async (req, res) => {
       "boardvala/custom-designs",
     );
 
+     
     const order = await CustomDesignOrder.create({
-      user: req.user ? req.user._id : null,
+      
+      user: req.user ? req.user.id : null,
 
       designFile: {
         url: fileResult.secure_url,
@@ -91,13 +93,11 @@ exports.createCustomDesignOrder = async (req, res) => {
       order,
     });
   } catch (err) {
-    console.error(err);
-
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
+  return res.status(500).json({
+    success: false,
+    message: err.message,
+  });
+}
 };
 
 exports.getAllCustomDesignOrders = async (req, res) => {
@@ -169,11 +169,11 @@ exports.updateCustomDesignStatus = async (req, res) => {
 exports.getMyCustomDesignOrders = async (req, res) => {
   try {
     const orders = await CustomDesignOrder.find({
-      user: req.user._id,
+      user: req.user.id,
     }).sort({
       createdAt: -1,
     });
-
+    
     res.status(200).json({
       success: true,
       orders,
@@ -192,7 +192,7 @@ exports.getMyCustomDesignOrderById = async (req, res) => {
   try {
     const order = await CustomDesignOrder.findOne({
       _id: req.params.id,
-      user: req.user._id,
+      user: req.user.id,
     });
 
     if (!order) {

@@ -18,7 +18,7 @@ router.post(
   createCustomDesignOrder
 );
 
-router.get("/", getAllCustomDesignOrders);
+router.get("/", authMiddleware, getAllCustomDesignOrders);
 
 router.get(
   "/my-orders",
@@ -32,8 +32,8 @@ router.get(
   getMyCustomDesignOrderById
 );
 
-router.get("/:id", getCustomDesignOrderById);
+router.get("/:id", authMiddleware, getCustomDesignOrderById);
 
-router.put("/:id", updateCustomDesignStatus);
+router.put("/:id", authMiddleware, updateCustomDesignStatus);
 
 module.exports = router;
