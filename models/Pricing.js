@@ -5,6 +5,7 @@ const framePriceSchema = new mongoose.Schema(
     frameSize: {
       type: String,
       required: true,
+      trim: true,
     },
     price: {
       type: Number,
@@ -20,10 +21,13 @@ const pricingSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      enum: ["MDF", "Acrylic", "Sunboard", "Vinyl"],
+      trim: true,
     },
 
-    framePrices: [framePriceSchema],
+    framePrices: {
+      type: [framePriceSchema],
+      default: [],
+    },
   },
   {
     timestamps: true,
