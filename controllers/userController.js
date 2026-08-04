@@ -3,31 +3,40 @@ const bcrypt = require("bcryptjs");
 
 exports.register = async (req, res) => {
   try {
-    const { mobile, password } = req.body;
+    const { email, mobile,  password } = req.body;
 
-    if (!mobile || !password) {
+    if (!email || !password) {
       return res.status(400).json({
-        message: "Mobile and Password are required",
+        message: "Email and Password are required",
       });
     }
 
-    const existingUser = await User.findOne({
-      mobile,
-    });
+    // email नीट आहे का (basic तपासणी)
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    if (!emailOk) {
+      return res.status(400).json({
+        message: "Please enter a valid email address",
+      });
+    }
 
+    const cleanEmail = email.trim().toLowerCase();
+ 
+    const existingUser = await User.findOne({
+      email: cleanEmail,
+    });
+    
     if (existingUser) {
       return res.status(400).json({
-        message: "Mobile number already registered",
+        message: "this email already registered",
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
+      email: email.trim().toLowerCase(),
       mobile,
-
       password: hashedPassword,
-
       role: "user",
     });
 
