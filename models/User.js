@@ -47,6 +47,19 @@ const userSchema = new mongoose.Schema(
 
       default: "",
     },
+
+    // Forgot-password साठी — reset token आणि तो कधी expire होतो
+    resetToken: {
+      type: String,
+ 
+      default: null,
+    },
+ 
+    resetTokenExpiry: {
+      type: Date,
+ 
+      default: null,
+    },
   },
 
   {
