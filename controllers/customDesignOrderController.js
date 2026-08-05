@@ -1,6 +1,7 @@
 const CustomDesignOrder = require("../models/CustomDesignOrder");
 const uploadToCloudinary = require("../utils/cloudinaryUpload");
 const { getPriceForFrameSize } = require("./paymentController");
+const { sendOrderEmails } = require("../utils/orderEmails");
 
 exports.createCustomDesignOrder = async (req, res) => {
   try {
@@ -86,6 +87,12 @@ exports.createCustomDesignOrder = async (req, res) => {
       customerAddress,
       payment,
     });
+
+    try {
+      await sendOrderEmails(order);
+    } catch (mailErr) {
+      console.error("Order email failed:", mailErr.message);
+    }
 
     res.status(201).json({
       success: true,

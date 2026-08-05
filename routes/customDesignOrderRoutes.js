@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const upload = require("../middleware/customDesignUpload");
+
 const authMiddleware = require("../middleware/authMiddleware");
 
 const {
