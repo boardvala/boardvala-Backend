@@ -133,3 +133,45 @@ exports.getSimilarGalleryDesigns = async (req, res) => {
     });
   }
 };
+
+
+// टप्पा १: फक्त details बदलतो — images ला हात लावत नाही (त्या तशाच राहतात).
+
+exports.updateGalleryDesign = async (req, res) => {
+  try {
+    const design = await GalleryDesign.findById(req.params.id);
+
+    if (!design) {
+      return res.status(404).json({
+        message: "Design not found",
+      });
+    }
+
+    // फक्त details बदला (जे पाठवलं तेच; नाहीतर जुनं ठेवा)
+    if (req.body.title !== undefined) design.title = req.body.title;
+    if (req.body.description !== undefined)
+      design.description = req.body.description;
+    if (req.body.category !== undefined) design.category = req.body.category;
+
+    // checkbox — string "true"/"false" किंवा boolean दोन्ही सांभाळतो
+    if (req.body.featured !== undefined) {
+      design.featured =
+        req.body.featured === "true" || req.body.featured === true;
+    }
+    if (req.body.active !== undefined) {
+      design.active = req.body.active === "true" || req.body.active === true;
+    }
+
+    // images ला हात लावत नाही — जुन्या तशाच राहतात.
+
+    await design.save();
+
+    res.json(design);
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
