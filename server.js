@@ -17,6 +17,7 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const pricingRoutes = require("./routes/pricingRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const adminDashboardRoutes = require("./routes/adminDashboardRoutes");
+const featuredProductRoutes = require("./routes/featuredProductRoutes");
 
 app.use(cors());
 
@@ -35,6 +36,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/pricing", pricingRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/admin", adminDashboardRoutes);
+app.use("/api/featured-products", featuredProductRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

@@ -14,6 +14,12 @@ const reviewSchema = new mongoose.Schema(
       default: null,
     },
 
+    featuredProduct: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "FeaturedProduct",
+      default: null,
+    },
+
     name: {
       type: String,
       required: true,
