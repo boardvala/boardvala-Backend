@@ -36,6 +36,8 @@ const customDesignOrderSchema = new mongoose.Schema(
       required: true,
     },
 
+    totalAmount: { type: Number, required: true },
+
     quantity: {
       type: Number,
       required: true,

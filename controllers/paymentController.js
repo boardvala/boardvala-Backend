@@ -2,12 +2,10 @@ const crypto = require("crypto");
 const razorpay = require("../config/razorpay");
 const Payment = require("../models/Payment");
 const Pricing = require("../models/Pricing");
+const FeaturedProduct = require("../models/FeaturedProduct");
 
-// वैध materials — Pricing model च्या enum शी जुळलेले.
 const VALID_MATERIALS = ["MDF", "Acrylic", "Sunboard", "Vinyl"];
 
-// frameSize + material वरून database मधून खरी किंमत काढतो.
-// frontend कडून येणारी material आधी तपासली जाते (bogus material टाळण्यासाठी).
 async function getPriceForFrameSize(frameSize, material) {
   if (!material || !VALID_MATERIALS.includes(material)) {
     throw new Error("Invalid material.");
@@ -25,10 +23,27 @@ async function getPriceForFrameSize(frameSize, material) {
     throw new Error("Invalid frame size.");
   }
 
-  return item.price; // <-- हीच खरी, विश्वसनीय किंमत (रुपयांत)
+  return item.price;
 }
 
 exports.getPriceForFrameSize = getPriceForFrameSize;
+
+// featured product ची खरी किंमत database मधून (cart वर विश्वास नको)
+async function getFeaturedProductPrice(featuredProductId) {
+  const product = await FeaturedProduct.findById(featuredProductId);
+
+  if (!product) {
+    throw new Error("Featured product not found.");
+  }
+
+  if (!product.active || !product.inStock) {
+    throw new Error("This product is not available for order.");
+  }
+
+  return product.price;
+}
+
+exports.getFeaturedProductPrice = getFeaturedProductPrice;
 
 exports.createPaymentOrder = async (req, res) => {
   try {
@@ -44,12 +59,19 @@ exports.createPaymentOrder = async (req, res) => {
     let total = 0;
 
     for (const item of items) {
-      const price = await getPriceForFrameSize(item.frameSize, item.material);
+      let price;
+
+      if (item.orderType === "featuredProduct") {
+        price = await getFeaturedProductPrice(item.featuredProductId);
+      } else {
+        price = await getPriceForFrameSize(item.frameSize, item.material);
+      }
 
       total += price * item.quantity;
     }
+
     const options = {
-      amount: Math.round(total * 100), // रुपये -> पैसे
+      amount: Math.round(total * 100),
       currency: "INR",
       receipt: `receipts_${Date.now()}`,
       notes: {
@@ -58,6 +80,7 @@ exports.createPaymentOrder = async (req, res) => {
     };
 
     const order = await razorpay.orders.create(options);
+
     res.json({
       success: true,
       order,

@@ -79,6 +79,7 @@ exports.createCustomDesignOrder = async (req, res) => {
       orientation,
       material,
       price, // <-- database मधून, सुरक्षित
+      totalAmount: price * quantity,
       quantity,
       instructions,
       customerName,
