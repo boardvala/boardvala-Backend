@@ -1,4 +1,4 @@
-const FeaturedOrder = require("../models/FeaturedOrder");
+const FeaturedOrder = require("../models/Featuredorder");
 const FeaturedProduct = require("../models/FeaturedProduct");
 const { getFeaturedProductPrice } = require("./paymentController");
 const { sendOrderEmails } = require("../utils/orderEmails");
