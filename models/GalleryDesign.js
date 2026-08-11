@@ -17,7 +17,7 @@ const galleryDesignSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ["MDF", "Acrylic", "Sunboard", "Vinyl"],
+      trim: true,
     },
 
     images: [

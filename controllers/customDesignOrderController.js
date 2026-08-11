@@ -1,12 +1,14 @@
 const CustomDesignOrder = require("../models/CustomDesignOrder");
+const Pricing = require("../models/Pricing");
 const uploadToCloudinary = require("../utils/cloudinaryUpload");
 const { getPriceForFrameSize } = require("./paymentController");
+const { calculateBannerPrice } = require("../utils/bannerPricing");
 const { sendOrderEmails } = require("../utils/orderEmails");
 
 exports.createCustomDesignOrder = async (req, res) => {
   try {
     const {
-      previewImage, // base64 data URL (data:image/png;base64,....)
+      previewImage,
       frameSize,
       orientation,
       material,
@@ -17,8 +19,11 @@ exports.createCustomDesignOrder = async (req, res) => {
       customerEmail,
       customerAddress,
       payment,
+      // banner साठी
+      width,
+      length,
     } = req.body;
-     
+
     // --- basic validation ---
     if (!previewImage) {
       return res.status(400).json({
@@ -54,20 +59,48 @@ exports.createCustomDesignOrder = async (req, res) => {
         message: "Payment reference is required.",
       });
     }
-    // --- price: frontend कडून नाही, database मधून (material + frameSize नुसार) ---
-    // getPriceForFrameSize आतमध्ये material वैध आहे का तपासतो.
-    const price = await getPriceForFrameSize(frameSize, material);
+
+    const qty = quantity || 1;
+
+    // --- price: frontend कडून नाही, database मधून (सुरक्षित) ---
+    // material चा pricingType बघून banner की fixed ठरवतो.
+    const pricingDoc = await Pricing.findOne({ material });
+
+    if (!pricingDoc) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid material or pricing not configured.",
+      });
+    }
+
+    let price; // प्रति नग किंमत
+    let totalAmount; // एकूण
+
+    if (pricingDoc.pricingType === "banner") {
+      // banner — width/length वरून गणना (qty आत धरलेली → totalAmount)
+      if (!width || !length) {
+        return res.status(400).json({
+          success: false,
+          message: "Banner width and length are required.",
+        });
+      }
+
+      const result = await calculateBannerPrice(material, width, length, qty);
+      totalAmount = result.finalPrice; // qty सह
+      price = Math.round(totalAmount / qty); // प्रति नग (दाखवायला)
+    } else {
+      // fixed — frameSize नुसार
+      price = await getPriceForFrameSize(frameSize, material);
+      totalAmount = price * qty;
+    }
 
     // --- base64 design Cloudinary वर upload ---
-    // uploadToCloudinary base64 data URL स्वीकारतो असे गृहीत.
     const fileResult = await uploadToCloudinary(
       previewImage,
       "boardvala/custom-designs",
     );
 
-     
     const order = await CustomDesignOrder.create({
-      
       user: req.user ? req.user.id : null,
 
       designFile: {
@@ -78,10 +111,17 @@ exports.createCustomDesignOrder = async (req, res) => {
       frameSize,
       orientation,
       material,
-      price, // <-- database मधून, सुरक्षित
-      totalAmount: price * quantity,
-      quantity,
+      price, // प्रति नग, database मधून
+      totalAmount, // एकूण (qty सह)
+      quantity: qty,
       instructions,
+
+      // banner साठी (fixed ला undefined — साठवले जात नाहीत)
+      bannerWidth:
+        pricingDoc.pricingType === "banner" ? Number(width) : undefined,
+      bannerLength:
+        pricingDoc.pricingType === "banner" ? Number(length) : undefined,
+
       customerName,
       customerPhone,
       customerEmail,
@@ -101,11 +141,12 @@ exports.createCustomDesignOrder = async (req, res) => {
       order,
     });
   } catch (err) {
-  return res.status(500).json({
-    success: false,
-    message: err.message,
-  });
-}
+    console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
 };
 
 exports.getAllCustomDesignOrders = async (req, res) => {

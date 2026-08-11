@@ -17,7 +17,6 @@ exports.createPricing = async (req, res) => {
 exports.getPricing = async (req, res) => {
   try {
     const pricing = await Pricing.find().sort({ material: 1 });
-
     res.json(pricing);
   } catch (err) {
     res.status(500).json({
@@ -47,7 +46,7 @@ exports.getPricingByMaterial = async (req, res) => {
   }
 };
 
-// Update Pricing
+// Update Pricing (framePrices — fixed materials)
 exports.updatePricing = async (req, res) => {
   try {
     const pricing = await Pricing.findOneAndUpdate(
@@ -60,7 +59,7 @@ exports.updatePricing = async (req, res) => {
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     if (!pricing) {
@@ -77,10 +76,10 @@ exports.updatePricing = async (req, res) => {
   }
 };
 
-// new method for creating material
+// Create material — pricingType सह (fixed किंवा banner)
 exports.createMaterial = async (req, res) => {
   try {
-    const { material } = req.body;
+    const { material, pricingType } = req.body;
 
     const exists = await Pricing.findOne({ material });
 
@@ -90,12 +89,71 @@ exports.createMaterial = async (req, res) => {
       });
     }
 
+    const type = pricingType === "banner" ? "banner" : "fixed";
+
     const pricing = await Pricing.create({
       material,
+      pricingType: type,
       framePrices: [],
+      // banner ला defaults — admin नंतर settings मधून बदलेल
+      ...(type === "banner"
+        ? {
+            ratePerSqFt: 0,
+            availableRolls: [],
+            minOrderValue: 0,
+            maxLength: 0,
+          }
+        : {}),
     });
 
     res.status(201).json(pricing);
+  } catch (err) {
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+// Banner settings update (rate, rolls, min, maxLength)
+exports.updateBannerSettings = async (req, res) => {
+  try {
+    const { ratePerSqFt, availableRolls, minOrderValue, maxLength } = req.body;
+
+    const pricing = await Pricing.findOne({ material: req.params.material });
+
+    if (!pricing) {
+      return res.status(404).json({
+        message: "Material not found",
+      });
+    }
+
+    if (pricing.pricingType !== "banner") {
+      return res.status(400).json({
+        message: "This material does not use banner pricing.",
+      });
+    }
+
+    // rolls — string ("3,4,5,6") किंवा array दोन्ही स्वीकारा, numbers मध्ये
+    let rolls = availableRolls;
+    if (typeof rolls === "string") {
+      rolls = rolls
+        .split(",")
+        .map((r) => Number(r.trim()))
+        .filter((r) => !isNaN(r) && r > 0);
+    } else if (Array.isArray(rolls)) {
+      rolls = rolls.map((r) => Number(r)).filter((r) => !isNaN(r) && r > 0);
+    } else {
+      rolls = [];
+    }
+
+    pricing.ratePerSqFt = Number(ratePerSqFt) || 0;
+    pricing.availableRolls = rolls;
+    pricing.minOrderValue = Number(minOrderValue) || 0;
+    pricing.maxLength = Number(maxLength) || 0;
+
+    await pricing.save();
+
+    res.json(pricing);
   } catch (err) {
     res.status(500).json({
       message: err.message,
@@ -133,9 +191,7 @@ exports.addFrameSize = async (req, res) => {
       });
     }
 
-    const exists = pricing.framePrices.find(
-      (x) => x.frameSize === frameSize
-    );
+    const exists = pricing.framePrices.find((x) => x.frameSize === frameSize);
 
     if (exists) {
       return res.status(400).json({
@@ -171,7 +227,7 @@ exports.deleteFrameSize = async (req, res) => {
     }
 
     pricing.framePrices = pricing.framePrices.filter(
-      (x) => x.frameSize !== req.params.frameSize
+      (x) => x.frameSize !== req.params.frameSize,
     );
 
     await pricing.save();
@@ -197,9 +253,7 @@ exports.updateFrameSize = async (req, res) => {
       });
     }
 
-    const frame = pricing.framePrices.find(
-      (f) => f.frameSize === frameSize
-    );
+    const frame = pricing.framePrices.find((f) => f.frameSize === frameSize);
 
     if (!frame) {
       return res.status(404).json({

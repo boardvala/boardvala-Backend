@@ -3,18 +3,19 @@ const razorpay = require("../config/razorpay");
 const Payment = require("../models/Payment");
 const Pricing = require("../models/Pricing");
 const FeaturedProduct = require("../models/FeaturedProduct");
+const { calculateBannerPrice } = require("../utils/bannerPricing");
 
-const VALID_MATERIALS = ["MDF", "Acrylic", "Sunboard", "Vinyl"];
-
+// frameSize + material वरून database मधून खरी किंमत काढतो (fixed materials).
+// material वैध = त्याची Pricing entry आहे (dynamic validation).
 async function getPriceForFrameSize(frameSize, material) {
-  if (!material || !VALID_MATERIALS.includes(material)) {
-    throw new Error("Invalid material.");
+  if (!material) {
+    throw new Error("Material is required.");
   }
 
   const pricing = await Pricing.findOne({ material });
 
   if (!pricing) {
-    throw new Error("Pricing not configured for this material.");
+    throw new Error("Invalid material or pricing not configured.");
   }
 
   const item = pricing.framePrices.find((p) => p.frameSize === frameSize);
@@ -45,6 +46,38 @@ async function getFeaturedProductPrice(featuredProductId) {
 
 exports.getFeaturedProductPrice = getFeaturedProductPrice;
 
+// एका cart item ची किंमत (प्रकार ओळखून योग्य गणना). एकूण = किंमत (quantity आत धरून).
+// featured/fixed साठी unit price परत, banner साठी total (qty आत धरलेली) परत —
+// म्हणून प्रत्येकाची total वेगळी काढतो.
+async function getItemTotal(item) {
+  if (item.orderType === "featuredProduct") {
+    const price = await getFeaturedProductPrice(item.featuredProductId);
+    return price * item.quantity;
+  }
+
+  // custom design — banner की fixed, material च्या pricingType वरून
+  const pricing = await Pricing.findOne({ material: item.material });
+
+  if (!pricing) {
+    throw new Error("Invalid material or pricing not configured.");
+  }
+
+  if (pricing.pricingType === "banner") {
+    // banner — width/length वरून गणना (qty आत धरलेली)
+    const result = await calculateBannerPrice(
+      item.material,
+      item.width,
+      item.length,
+      item.quantity,
+    );
+    return result.finalPrice;
+  }
+
+  // fixed — frameSize वरून
+  const price = await getPriceForFrameSize(item.frameSize, item.material);
+  return price * item.quantity;
+}
+
 exports.createPaymentOrder = async (req, res) => {
   try {
     const { items } = req.body;
@@ -59,15 +92,7 @@ exports.createPaymentOrder = async (req, res) => {
     let total = 0;
 
     for (const item of items) {
-      let price;
-
-      if (item.orderType === "featuredProduct") {
-        price = await getFeaturedProductPrice(item.featuredProductId);
-      } else {
-        price = await getPriceForFrameSize(item.frameSize, item.material);
-      }
-
-      total += price * item.quantity;
+      total += await getItemTotal(item);
     }
 
     const options = {

@@ -27,8 +27,8 @@ const customDesignOrderSchema = new mongoose.Schema(
 
     orientation: {
       type: String,
-      enum: ["Landscape", "Portrait"],
-      required: true,
+      enum: ["Landscape", "Portrait", ""], // "" जोडा (banner साठी)
+      default: "",
     },
 
     price: {
@@ -47,7 +47,6 @@ const customDesignOrderSchema = new mongoose.Schema(
     // Customer selects this at upload time
     material: {
       type: String,
-      enum: ["MDF", "Acrylic", "Sunboard", "Vinyl"],
       required: true,
     },
 
@@ -62,6 +61,9 @@ const customDesignOrderSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    bannerWidth: { type: Number },
+    bannerLength: { type: Number },
 
     customerName: {
       type: String,

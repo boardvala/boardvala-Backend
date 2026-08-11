@@ -1,9 +1,13 @@
 const sendEmail = require("./sendemail");
 
 // order custom design आहे की featured product — ओळखतो.
-// featured order ला title असतो + material नसतो.
 function isFeatured(order) {
   return !!order.featuredProduct || (!!order.title && !order.material);
+}
+
+// custom order banner आहे का — banner ला bannerWidth असतो (किंवा orientation रिकामं)
+function isBanner(order) {
+  return order.bannerWidth != null || order.orientation === "";
 }
 
 // order च्या प्रकारानुसार details ओळी (rows) बनवतो.
@@ -17,11 +21,17 @@ function detailRows(order) {
     `;
   }
 
-  // ---- Custom design ----
+  // ---- Custom design (banner की fixed) ----
+  const orientationRow = isBanner(order)
+    ? "" // banner ला orientation दाखवायचं नाही
+    : `<tr><td style="padding:8px 0; color:#64748b;">Orientation</td><td style="padding:8px 0; text-align:right;">${order.orientation}</td></tr>`;
+
+  const sizeLabel = isBanner(order) ? "Banner Size" : "Size";
+
   return `
     <tr><td style="padding:8px 0; color:#64748b;">Material</td><td style="padding:8px 0; text-align:right;">${order.material}</td></tr>
-    <tr><td style="padding:8px 0; color:#64748b;">Size</td><td style="padding:8px 0; text-align:right;">${order.frameSize}</td></tr>
-    <tr><td style="padding:8px 0; color:#64748b;">Orientation</td><td style="padding:8px 0; text-align:right;">${order.orientation}</td></tr>
+    <tr><td style="padding:8px 0; color:#64748b;">${sizeLabel}</td><td style="padding:8px 0; text-align:right;">${order.frameSize}</td></tr>
+    ${orientationRow}
     <tr><td style="padding:8px 0; color:#64748b;">Quantity</td><td style="padding:8px 0; text-align:right;">${order.quantity || 1}</td></tr>
     <tr><td style="padding:8px 0; color:#64748b;">Amount</td><td style="padding:8px 0; text-align:right; font-weight:bold;">₹${order.totalAmount}</td></tr>
   `;
@@ -37,7 +47,7 @@ function customerOrderHtml(order) {
       <p>Hi ${order.customerName}, we've received your ${orderKind}. Here are the details:</p>
 
       <table style="width:100%; border-collapse: collapse; margin: 18px 0;">
-        <tr><td style="padding:8px 0; color:#64748b;">Order ID</td><td style="padding:8px 0; text-align:right; font-weight:bold;">${order._id}</td></tr>
+        <tr><td style="padding:8px 0; color:#64748b;">Order ID</td><td style="padding:8px 0; text-align:right; font-weight:bold;">#${order._id.toString().slice(-6).toUpperCase()}</td></tr>
         ${detailRows(order)}
       </table>
 
@@ -54,13 +64,20 @@ function customerOrderHtml(order) {
 }
 
 function adminOrderHtml(order) {
+  let typeLabel = "Custom Design";
+  if (isFeatured(order)) {
+    typeLabel = "Featured Product";
+  } else if (isBanner(order)) {
+    typeLabel = "Banner";
+  }
+
   return `
     <div style="font-family: Arial, sans-serif; max-width: 520px; margin: auto; color:#0f172a;">
       <h2 style="color:#2563eb;">New Order Received</h2>
 
       <table style="width:100%; border-collapse: collapse; margin: 18px 0;">
-        <tr><td style="padding:8px 0; color:#64748b;">Order ID</td><td style="padding:8px 0; text-align:right; font-weight:bold;">${order._id}</td></tr>
-        <tr><td style="padding:8px 0; color:#64748b;">Type</td><td style="padding:8px 0; text-align:right;">${isFeatured(order) ? "Featured Product" : "Custom Design"}</td></tr>
+        <tr><td style="padding:8px 0; color:#64748b;">Order ID</td><td style="padding:8px 0; text-align:right; font-weight:bold;">#${order._id.toString().slice(-6).toUpperCase()}</td></tr>
+        <tr><td style="padding:8px 0; color:#64748b;">Type</td><td style="padding:8px 0; text-align:right;">${typeLabel}</td></tr>
         ${detailRows(order)}
       </table>
 

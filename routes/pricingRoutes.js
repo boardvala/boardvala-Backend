@@ -14,6 +14,7 @@ const {
   addFrameSize,
   deleteFrameSize,
   updateFrameSize,
+  updateBannerSettings,
 } = require("../controllers/pricingController");
 
 // Material
@@ -27,6 +28,8 @@ router.post("/:material/frame", authMiddleware, adminMiddleware, addFrameSize);
 router.delete("/:material/frame/:frameSize", authMiddleware, adminMiddleware, deleteFrameSize);
 
 router.put("/:material/frame/:frameSize", authMiddleware, adminMiddleware, updateFrameSize);
+
+router.put("/:material/banner-settings", authMiddleware, adminMiddleware, updateBannerSettings);
 
 // Existing
 router.post("/", authMiddleware, adminMiddleware, createPricing);
