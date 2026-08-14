@@ -2,6 +2,8 @@ const FeaturedOrder = require("../models/Featuredorder");
 const FeaturedProduct = require("../models/FeaturedProduct");
 const { getFeaturedProductPrice } = require("./paymentController");
 const { sendOrderEmails } = require("../utils/orderEmails");
+const { pushOrderToShiprocket } = require("../utils/shiprocketOrder");
+const { getOrderStatus } = require("../utils/shiprocketTracking");
 
 exports.createFeaturedOrder = async (req, res) => {
   try {
@@ -12,6 +14,9 @@ exports.createFeaturedOrder = async (req, res) => {
       customerPhone,
       customerEmail,
       customerAddress,
+      customerCity, // ← नवीन
+      customerState, // ← नवीन
+      customerPincode, // ← नवीन
       payment,
     } = req.body;
 
@@ -27,6 +32,13 @@ exports.createFeaturedOrder = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Customer name, phone and address are required.",
+      });
+    }
+
+    if (!customerCity || !customerState || !customerPincode) {
+      return res.status(400).json({
+        success: false,
+        message: "City, state and pincode are required for delivery.",
       });
     }
 
@@ -66,19 +78,34 @@ exports.createFeaturedOrder = async (req, res) => {
       customerPhone,
       customerEmail,
       customerAddress,
+      customerCity, // ← नवीन
+      customerState, // ← नवीन
+      customerPincode,
       payment,
     });
-
-    console.log("EMAIL DEBUG featured:", {
-  featuredProduct: order.featuredProduct,
-  title: order.title,
-  material: order.material,
-});
 
     try {
       await sendOrderEmails(order);
     } catch (mailErr) {
       console.error("Order email failed:", mailErr.message);
+    }
+
+    try {
+      const items = [
+        {
+          name: order.title,
+          sku: order._id.toString(),
+          units: order.quantity,
+          selling_price: order.price,
+        },
+      ];
+      const sr = await pushOrderToShiprocket(order, items);
+      order.shiprocketOrderId = sr.shiprocketOrderId;
+      order.shiprocketShipmentId = sr.shipmentId;
+      await order.save();
+    } catch (srErr) {
+      console.error("Shiprocket push failed:", srErr.message);
+      // order तुटू नये — फक्त log
     }
 
     res.status(201).json({
@@ -91,6 +118,63 @@ exports.createFeaturedOrder = async (req, res) => {
       success: false,
       message: err.message,
     });
+  }
+};
+
+exports.getFeaturedOrderTracking = async (req, res) => {
+  try {
+    const order = await FeaturedOrder.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    // security — याच user चा order का
+    if (order.user && order.user.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: "Not allowed" });
+    }
+
+    if (!order.shiprocketOrderId) {
+      return res.json({ success: true, tracking: null, message: "Not shipped yet" });
+    }
+
+    const status = await getOrderStatus(order.shiprocketOrderId);
+
+    if (status?.awbCode && !order.awbCode) {
+      order.awbCode = status.awbCode;
+      order.courierName = status.courierName;
+      await order.save();
+    }
+
+    res.json({ success: true, tracking: status });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.getAdminFeaturedOrderTracking = async (req, res) => {
+  try {
+    const order = await FeaturedOrder.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    // admin — user security check नको (adminMiddleware संरक्षण)
+
+    if (!order.shiprocketOrderId) {
+      return res.json({ success: true, tracking: null, message: "Not shipped yet" });
+    }
+
+    const status = await getOrderStatus(order.shiprocketOrderId);
+
+    if (status?.awbCode && !order.awbCode) {
+      order.awbCode = status.awbCode;
+      order.courierName = status.courierName;
+      await order.save();
+    }
+
+    res.json({ success: true, tracking: status });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 

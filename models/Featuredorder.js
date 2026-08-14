@@ -34,6 +34,26 @@ const featuredOrderSchema = new mongoose.Schema(
     customerEmail: { type: String, default: "" },
     customerAddress: { type: String, default: "" },
 
+    // Shiprocket साठी — structured address
+    customerCity: {
+      type: String,
+      required: true,
+    },
+    customerState: {
+      type: String,
+      required: true,
+    },
+    customerPincode: {
+      type: String,
+      required: true,
+    },
+
+    // Shiprocket tracking (push नंतर भरतील — optional)
+    shiprocketOrderId: { type: String },
+    shiprocketShipmentId: { type: String },
+    awbCode: { type: String },
+    courierName: { type: String },
+
     // payment ref
     payment: {
       type: mongoose.Schema.Types.ObjectId,

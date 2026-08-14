@@ -11,6 +11,8 @@ const {
   updateCustomDesignStatus,
   getMyCustomDesignOrders,
   getMyCustomDesignOrderById,
+  getOrderTracking,
+  getAdminOrderTracking,
 } = require("../controllers/customDesignOrderController");
 
 //for user's
@@ -37,7 +39,10 @@ router.get(
   getMyCustomDesignOrderById
 );
 
+router.get("/:id/tracking", authMiddleware, getOrderTracking);
 //for admin
+router.get("/:id/admin-tracking", authMiddleware, adminMiddleware, getAdminOrderTracking);
+
 router.get("/:id", authMiddleware, adminMiddleware, getCustomDesignOrderById);
 
 router.put("/:id", authMiddleware, adminMiddleware, updateCustomDesignStatus);

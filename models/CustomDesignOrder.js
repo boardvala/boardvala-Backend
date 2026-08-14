@@ -85,11 +85,33 @@ const customDesignOrderSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Shiprocket साठी — structured address
+    customerCity: {
+      type: String,
+      required: true,
+    },
+
+    customerState: {
+      type: String,
+      required: true,
+    },
+
+    customerPincode: {
+      type: String,
+      required: true,
+    },
+
     status: {
       type: String,
       enum: ["Pending", "Processing", "Completed", "Cancelled"],
       default: "Pending",
     },
+
+    // Shiprocket tracking
+    shiprocketOrderId: { type: String },
+    shiprocketShipmentId: { type: String },
+    awbCode: { type: String }, // tracking number
+    courierName: { type: String },
 
     payment: {
       type: mongoose.Schema.Types.ObjectId,
