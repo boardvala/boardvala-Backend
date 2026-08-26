@@ -23,8 +23,6 @@ async function getShiprocketToken() {
     "base64",
   ).toString("utf-8");
 
-  console.log("email=", email, "and", "pass=", password);
-
   if (!email || !password) {
     throw new Error("Shiprocket credentials are not configured.");
   }
