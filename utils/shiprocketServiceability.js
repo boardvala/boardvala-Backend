@@ -25,7 +25,7 @@ async function checkPincodeServiceability(pickupPincode, deliveryPincode) {
     );
 
     const couriers = res.data?.data?.available_courier_companies || [];
-    console.log(couriers);
+
     if (couriers.length > 0) {
       // सर्वात जलद courier शोधा
       const fastest = couriers.reduce((a, b) =>
