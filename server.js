@@ -4,10 +4,6 @@ const cors = require("cors");
 require("dotenv").config();
 
 const path = require("path");
-console.log("App running from:", process.cwd());
-console.log(".env path:", path.resolve(".env"));
-const fs = require("fs");
-console.log(".env exists:", fs.existsSync(path.resolve(".env")));
 
 const app = express();
 const productRoutes = require("./routes/productRoutes");

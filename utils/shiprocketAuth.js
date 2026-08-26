@@ -18,9 +18,12 @@ async function getShiprocketToken() {
   }
 
   const email = process.env.SHIPROCKET_EMAIL;
-  const password = process.env.SHIPROCKET_PASSWORD;
+  const password = Buffer.from(
+    process.env.SHIPROCKET_PASSWORD_B64 || "",
+    "base64",
+  ).toString("utf-8");
 
-  console.log('email=',email,'and', 'pass=',password);
+  console.log("email=", email, "and", "pass=", password);
 
   if (!email || !password) {
     throw new Error("Shiprocket credentials are not configured.");
@@ -48,10 +51,7 @@ async function getShiprocketToken() {
     // login fail — cache clear
     cachedToken = null;
     tokenExpiry = null;
-    console.error(
-      "Shiprocket auth failed:",
-      err.response?.data || err.message,
-    );
+    console.error("Shiprocket auth failed:", err.response?.data || err.message);
     throw new Error("Could not authenticate with Shiprocket.");
   }
 }
