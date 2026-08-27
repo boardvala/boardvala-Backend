@@ -161,7 +161,6 @@ exports.createCustomDesignOrder = async (req, res) => {
         },
       ];
       const sr = await pushOrderToShiprocket(order, items);
-      console.log('success',sr)
       order.shiprocketOrderId = sr.shiprocketOrderId;
       order.shiprocketShipmentId = sr.shipmentId;
       await order.save();

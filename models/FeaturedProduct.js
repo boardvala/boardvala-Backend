@@ -20,6 +20,24 @@ const featuredProductSchema = new mongoose.Schema(
       min: 0,
     },
 
+    // model मध्ये schema मध्ये जोडा:
+    material: {
+      type: String,
+      default: "",
+    },
+    size: {
+      type: String,
+      default: "",
+    },
+    thickness: {
+      type: String,
+      default: "",
+    },
+    waterproof: {
+      type: Boolean,
+      default: false,
+    },
+
     // सध्या साधं text — नंतर enum/categories करता येईल
     category: {
       type: String,

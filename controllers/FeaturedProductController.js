@@ -5,7 +5,6 @@ const deleteFromCloudinary = require("../utils/cloudinaryDelete");
 // ---- Create ----
 exports.createFeaturedProduct = async (req, res) => {
   try {
-    // सगळ्या images Cloudinary वर (gallery सारखं)
     const images = await Promise.all(
       (req.files || []).map(async (file) => {
         const result = await uploadToCloudinary(
@@ -22,8 +21,13 @@ exports.createFeaturedProduct = async (req, res) => {
     const product = await FeaturedProduct.create({
       title: req.body.title,
       description: req.body.description,
-      price: req.body.price, // admin कडून, साठवला जातो
+      price: req.body.price,
       category: req.body.category,
+      material: req.body.material || "",
+      size: req.body.size || "",
+      thickness: req.body.thickness || "",
+      waterproof:
+        req.body.waterproof === "true" || req.body.waterproof === true,
       inStock: req.body.inStock === "true" || req.body.inStock === true,
       active: req.body.active === "true" || req.body.active === true,
       images,
@@ -35,7 +39,6 @@ exports.createFeaturedProduct = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 // ---- List (सगळे; user साठी active filter जोडता येईल) ----
 exports.getFeaturedProducts = async (req, res) => {
   try {
@@ -76,6 +79,14 @@ exports.updateFeaturedProduct = async (req, res) => {
     if (req.body.description !== undefined)
       product.description = req.body.description;
     if (req.body.price !== undefined) product.price = req.body.price;
+    if (req.body.material !== undefined) product.material = req.body.material;
+    if (req.body.size !== undefined) product.size = req.body.size;
+    if (req.body.thickness !== undefined)
+      product.thickness = req.body.thickness;
+    if (req.body.waterproof !== undefined) {
+      product.waterproof =
+        req.body.waterproof === "true" || req.body.waterproof === true;
+    }
     if (req.body.category !== undefined) product.category = req.body.category;
 
     if (req.body.inStock !== undefined) {
