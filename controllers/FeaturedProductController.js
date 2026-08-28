@@ -107,6 +107,104 @@ exports.updateFeaturedProduct = async (req, res) => {
   }
 };
 
+
+// ---- Add Images ----
+exports.addFeaturedProductImages = async (req, res) => {
+  try {
+    const product = await FeaturedProduct.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
+    }
+
+    const files = req.files || [];
+
+    if (files.length === 0) {
+      return res.status(400).json({
+        message: "Please select at least one image.",
+      });
+    }
+
+    // Maximum 5 images
+    if (product.images.length + files.length > 5) {
+      return res.status(400).json({
+        message: `You can have maximum 5 images. Currently you have ${product.images.length}.`,
+      });
+    }
+
+    const newImages = await Promise.all(
+      files.map(async (file) => {
+        const result = await uploadToCloudinary(
+          file,
+          "boardvala/featured-products",
+        );
+
+        return {
+          url: result.secure_url,
+          publicId: result.public_id,
+        };
+      }),
+    );
+
+    product.images.push(...newImages);
+
+    await product.save();
+
+    res.json({
+      message: "Images added successfully.",
+      images: product.images,
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+
+// ---- Delete Single Image ----
+exports.deleteFeaturedProductImage = async (req, res) => {
+  try {
+    const product = await FeaturedProduct.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({
+        message: "Product not found",
+      });
+    }
+
+    const image = product.images.id(req.params.imageId);
+
+    if (!image) {
+      return res.status(404).json({
+        message: "Image not found",
+      });
+    }
+
+    if (image.publicId) {
+      await deleteFromCloudinary(image.publicId, "image");
+    }
+
+    image.deleteOne();
+
+    await product.save();
+
+    res.json({
+      message: "Image deleted successfully",
+      images: product.images,
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
 // ---- Delete (images Cloudinary वरून पण काढा) ----
 exports.deleteFeaturedProduct = async (req, res) => {
   try {

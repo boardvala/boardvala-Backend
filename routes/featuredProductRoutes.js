@@ -10,6 +10,8 @@ const {
   getFeaturedProduct,
   updateFeaturedProduct,
   deleteFeaturedProduct,
+  addFeaturedProductImages,
+  deleteFeaturedProductImage,
 } = require("../controllers/FeaturedProductController");
 
 // create — आधी auth+admin तपासा, मग (admin असेल तरच) files घे
@@ -28,6 +30,23 @@ router.get("/:id", getFeaturedProduct);
 
 // update — टप्पा १: फक्त details + price (images नाही, म्हणून upload नको)
 router.put("/:id", authMiddleware, adminMiddleware, updateFeaturedProduct);
+
+// Add new images (max 5 total)
+router.post(
+  "/:id/images",
+  authMiddleware,
+  adminMiddleware,
+  upload.array("images", 5),
+  addFeaturedProductImages,
+);
+
+// Delete single image
+router.delete(
+  "/:id/images/:imageId",
+  authMiddleware,
+  adminMiddleware,
+  deleteFeaturedProductImage,
+);
 
 router.delete("/:id", authMiddleware, adminMiddleware, deleteFeaturedProduct);
 

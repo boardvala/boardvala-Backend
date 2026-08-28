@@ -175,3 +175,93 @@ exports.updateGalleryDesign = async (req, res) => {
     });
   }
 };
+
+exports.addGalleryDesignImages = async (req, res) => {
+  try {
+    const design = await GalleryDesign.findById(req.params.id);
+
+    if (!design) {
+      return res.status(404).json({
+        message: "Design not found",
+      });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        message: "Please upload at least one image.",
+      });
+    }
+
+    // Maximum 5 images allowed
+    if (design.images.length + req.files.length > 5) {
+      return res.status(400).json({
+        message: "Maximum 5 images are allowed.",
+      });
+    }
+
+    const newImages = await Promise.all(
+      req.files.map(async (file) => {
+        const result = await uploadToCloudinary(file, "boardvala/gallery");
+
+        return {
+          url: result.secure_url,
+          publicId: result.public_id,
+        };
+      }),
+    );
+
+    design.images.push(...newImages);
+
+    await design.save();
+
+    res.json({
+      message: "Images added successfully.",
+      images: design.images,
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
+
+exports.deleteGalleryDesignImage = async (req, res) => {
+  try {
+    const design = await GalleryDesign.findById(req.params.id);
+
+    if (!design) {
+      return res.status(404).json({
+        message: "Design not found",
+      });
+    }
+
+    const image = design.images.id(req.params.imageId);
+
+    if (!image) {
+      return res.status(404).json({
+        message: "Image not found",
+      });
+    }
+
+    if (image.publicId) {
+      await deleteFromCloudinary(image.publicId, "image");
+    }
+
+    image.deleteOne();
+
+    await design.save();
+
+    res.json({
+      message: "Image deleted successfully.",
+      images: design.images,
+    });
+  } catch (err) {
+    console.log(err);
+
+    res.status(500).json({
+      message: err.message,
+    });
+  }
+};
