@@ -107,18 +107,12 @@ exports.createCustomDesignOrder = async (req, res) => {
       totalAmount = price * qty;
     }
 
-    // --- base64 design Cloudinary वर upload ---
-    const fileResult = await uploadToCloudinary(
-      previewImage,
-      "boardvala/custom-designs",
-    );
-
     const order = await CustomDesignOrder.create({
       user: req.user ? req.user.id : null,
 
       designFile: {
-        url: fileResult.secure_url,
-        publicId: fileResult.public_id,
+        url: "",
+        publicId: "",
       },
 
       frameSize,
@@ -167,6 +161,17 @@ exports.createCustomDesignOrder = async (req, res) => {
     } catch (srErr) {
       console.error("Shiprocket push failed:", srErr.message);
       // order तुटू नये — फक्त log
+    }
+
+    try {
+      const designFile = await uploadToCloudinary(previewImage, "boardvala/custom-designs");
+      order.designFile = {
+        url: designFile.secure_url,
+        publicId: designFile.public_id,
+      };
+      await order.save();
+    } catch (imgErr) {
+      console.error("Cloudinary upload failed, order:", order._id, imgErr.message);
     }
 
     res.status(201).json({

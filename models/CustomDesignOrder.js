@@ -11,12 +11,11 @@ const customDesignOrderSchema = new mongoose.Schema(
     designFile: {
       url: {
         type: String,
-        required: true,
+        default: "",
       },
-
       publicId: {
         type: String,
-        required: true,
+        default: "",
       },
     },
 
