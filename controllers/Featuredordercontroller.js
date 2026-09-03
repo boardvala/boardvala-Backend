@@ -2,8 +2,8 @@ const FeaturedOrder = require("../models/Featuredorder");
 const FeaturedProduct = require("../models/FeaturedProduct");
 const { getFeaturedProductPrice } = require("./paymentController");
 const { sendOrderEmails } = require("../utils/orderEmails");
-const { pushOrderToShiprocket } = require("../utils/shiprocketOrder");
-const { getOrderStatus } = require("../utils/shiprocketTracking");
+//const { pushOrderToShiprocket } = require("../utils/shiprocketOrder");
+//const { getOrderStatus } = require("../utils/shiprocketTracking");
 
 exports.createFeaturedOrder = async (req, res) => {
   try {
@@ -90,23 +90,23 @@ exports.createFeaturedOrder = async (req, res) => {
       console.error("Order email failed:", mailErr.message);
     }
 
-    try {
-      const items = [
-        {
-          name: order.title,
-          sku: order._id.toString(),
-          units: order.quantity,
-          selling_price: order.price,
-        },
-      ];
-      const sr = await pushOrderToShiprocket(order, items);
-      order.shiprocketOrderId = sr.shiprocketOrderId;
-      order.shiprocketShipmentId = sr.shipmentId;
-      await order.save();
-    } catch (srErr) {
-      console.error("Shiprocket push failed:", srErr.message);
-      // order तुटू नये — फक्त log
-    }
+    // try {
+    //   const items = [
+    //     {
+    //       name: order.title,
+    //       sku: order._id.toString(),
+    //       units: order.quantity,
+    //       selling_price: order.price,
+    //     },
+    //   ];
+    //   const sr = await pushOrderToShiprocket(order, items);
+    //   order.shiprocketOrderId = sr.shiprocketOrderId;
+    //   order.shiprocketShipmentId = sr.shipmentId;
+    //   await order.save();
+    // } catch (srErr) {
+    //   console.error("Shiprocket push failed:", srErr.message);
+    //   // order तुटू नये — फक्त log
+    // }
 
     res.status(201).json({
       success: true,
@@ -121,62 +121,62 @@ exports.createFeaturedOrder = async (req, res) => {
   }
 };
 
-exports.getFeaturedOrderTracking = async (req, res) => {
-  try {
-    const order = await FeaturedOrder.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+// exports.getFeaturedOrderTracking = async (req, res) => {
+//   try {
+//     const order = await FeaturedOrder.findById(req.params.id);
+//     if (!order) {
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
 
-    // security — याच user चा order का
-    if (order.user && order.user.toString() !== req.user.id) {
-      return res.status(403).json({ success: false, message: "Not allowed" });
-    }
+//     // security — याच user चा order का
+//     if (order.user && order.user.toString() !== req.user.id) {
+//       return res.status(403).json({ success: false, message: "Not allowed" });
+//     }
 
-    if (!order.shiprocketOrderId) {
-      return res.json({ success: true, tracking: null, message: "Not shipped yet" });
-    }
+//     if (!order.shiprocketOrderId) {
+//       return res.json({ success: true, tracking: null, message: "Not shipped yet" });
+//     }
 
-    const status = await getOrderStatus(order.shiprocketOrderId);
+//     const status = await getOrderStatus(order.shiprocketOrderId);
 
-    if (status?.awbCode && !order.awbCode) {
-      order.awbCode = status.awbCode;
-      order.courierName = status.courierName;
-      await order.save();
-    }
+//     if (status?.awbCode && !order.awbCode) {
+//       order.awbCode = status.awbCode;
+//       order.courierName = status.courierName;
+//       await order.save();
+//     }
 
-    res.json({ success: true, tracking: status });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
+//     res.json({ success: true, tracking: status });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
 
-exports.getAdminFeaturedOrderTracking = async (req, res) => {
-  try {
-    const order = await FeaturedOrder.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+// exports.getAdminFeaturedOrderTracking = async (req, res) => {
+//   try {
+//     const order = await FeaturedOrder.findById(req.params.id);
+//     if (!order) {
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
 
-    // admin — user security check नको (adminMiddleware संरक्षण)
+//     // admin — user security check नको (adminMiddleware संरक्षण)
 
-    if (!order.shiprocketOrderId) {
-      return res.json({ success: true, tracking: null, message: "Not shipped yet" });
-    }
+//     if (!order.shiprocketOrderId) {
+//       return res.json({ success: true, tracking: null, message: "Not shipped yet" });
+//     }
 
-    const status = await getOrderStatus(order.shiprocketOrderId);
+//     const status = await getOrderStatus(order.shiprocketOrderId);
 
-    if (status?.awbCode && !order.awbCode) {
-      order.awbCode = status.awbCode;
-      order.courierName = status.courierName;
-      await order.save();
-    }
+//     if (status?.awbCode && !order.awbCode) {
+//       order.awbCode = status.awbCode;
+//       order.courierName = status.courierName;
+//       await order.save();
+//     }
 
-    res.json({ success: true, tracking: status });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
+//     res.json({ success: true, tracking: status });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
 
 exports.getAllFeaturedOrders = async (req, res) => {
   try {

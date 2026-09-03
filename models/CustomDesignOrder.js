@@ -107,10 +107,18 @@ const customDesignOrderSchema = new mongoose.Schema(
     },
 
     // Shiprocket tracking
-    shiprocketOrderId: { type: String },
-    shiprocketShipmentId: { type: String },
-    awbCode: { type: String }, // tracking number
-    courierName: { type: String },
+    // shiprocketOrderId: { type: String },
+    // shiprocketShipmentId: { type: String },
+    // awbCode: { type: String },
+    // courierName: { type: String },
+
+    trackingNumber: { type: String, default: "" },
+    courierName: { type: String, default: "" },
+    shippingStatus: {
+      type: String,
+      default: "Processing",
+      enum: ["Processing", "Shipped", "In Transit", "Delivered", "Cancelled"],
+    },
 
     payment: {
       type: mongoose.Schema.Types.ObjectId,

@@ -4,8 +4,8 @@ const uploadToCloudinary = require("../utils/cloudinaryUpload");
 const { getPriceForFrameSize } = require("./paymentController");
 const { calculateBannerPrice } = require("../utils/bannerPricing");
 const { sendOrderEmails } = require("../utils/orderEmails");
-const { pushOrderToShiprocket } = require("../utils/shiprocketOrder");
-const { getOrderStatus } = require("../utils/shiprocketTracking");
+//const { pushOrderToShiprocket } = require("../utils/shiprocketOrder");
+//const { getOrderStatus } = require("../utils/shiprocketTracking");
 
 exports.createCustomDesignOrder = async (req, res) => {
   try {
@@ -145,23 +145,23 @@ exports.createCustomDesignOrder = async (req, res) => {
       console.error("Order email failed:", mailErr.message);
     }
 
-    try {
-      const items = [
-        {
-          name: `${order.material} - ${order.frameSize}`,
-          sku: order._id.toString(),
-          units: order.quantity,
-          selling_price: order.price,
-        },
-      ];
-      const sr = await pushOrderToShiprocket(order, items);
-      order.shiprocketOrderId = sr.shiprocketOrderId;
-      order.shiprocketShipmentId = sr.shipmentId;
-      await order.save();
-    } catch (srErr) {
-      console.error("Shiprocket push failed:", srErr.message);
-      // order तुटू नये — फक्त log
-    }
+    // try {
+    //   const items = [
+    //     {
+    //       name: `${order.material} - ${order.frameSize}`,
+    //       sku: order._id.toString(),
+    //       units: order.quantity,
+    //       selling_price: order.price,
+    //     },
+    //   ];
+    //   const sr = await pushOrderToShiprocket(order, items);
+    //   order.shiprocketOrderId = sr.shiprocketOrderId;
+    //   order.shiprocketShipmentId = sr.shipmentId;
+    //   await order.save();
+    // } catch (srErr) {
+    //   console.error("Shiprocket push failed:", srErr.message);
+    //   // order तुटू नये — फक्त log
+    // }
 
     try {
       const designFile = await uploadToCloudinary(previewImage, "boardvala/custom-designs");
@@ -188,58 +188,58 @@ exports.createCustomDesignOrder = async (req, res) => {
   }
 };
 
-exports.getOrderTracking = async (req, res) => {
-  try {
-    const order = await CustomDesignOrder.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
-    // security — हा order याच user चा आहे का (आठवा — my-orders pattern)
-    if (order.user && order.user.toString() !== req.user.id) {
-      return res.status(403).json({ success: false, message: "Not allowed" });
-    }
-    if (!order.shiprocketOrderId) {
-      return res.json({ success: true, tracking: null, message: "Not shipped yet" });
-    }
-    const status = await getOrderStatus(order.shiprocketOrderId);
-    // मिळालं तर order मध्ये update (AWB save)
-    if (status?.awbCode && !order.awbCode) {
-      order.awbCode = status.awbCode;
-      order.courierName = status.courierName;
-      await order.save();
-    }
-    res.json({ success: true, tracking: status });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-}; 
+// exports.getOrderTracking = async (req, res) => {
+//   try {
+//     const order = await CustomDesignOrder.findById(req.params.id);
+//     if (!order) {
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
+//     // security — हा order याच user चा आहे का (आठवा — my-orders pattern)
+//     if (order.user && order.user.toString() !== req.user.id) {
+//       return res.status(403).json({ success: false, message: "Not allowed" });
+//     }
+//     if (!order.shiprocketOrderId) {
+//       return res.json({ success: true, tracking: null, message: "Not shipped yet" });
+//     }
+//     const status = await getOrderStatus(order.shiprocketOrderId);
+//     // मिळालं तर order मध्ये update (AWB save)
+//     if (status?.awbCode && !order.awbCode) {
+//       order.awbCode = status.awbCode;
+//       order.courierName = status.courierName;
+//       await order.save();
+//     }
+//     res.json({ success: true, tracking: status });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// }; 
 
-exports.getAdminOrderTracking = async (req, res) => {
-  try {
-    const order = await CustomDesignOrder.findById(req.params.id);
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
-    }
+// exports.getAdminOrderTracking = async (req, res) => {
+//   try {
+//     const order = await CustomDesignOrder.findById(req.params.id);
+//     if (!order) {
+//       return res.status(404).json({ success: false, message: "Order not found" });
+//     }
 
-    // admin — user security check नको (adminMiddleware ने संरक्षण)
+//     // admin — user security check नको (adminMiddleware ने संरक्षण)
 
-    if (!order.shiprocketOrderId) {
-      return res.json({ success: true, tracking: null, message: "Not shipped yet" });
-    }
+//     if (!order.shiprocketOrderId) {
+//       return res.json({ success: true, tracking: null, message: "Not shipped yet" });
+//     }
 
-    const status = await getOrderStatus(order.shiprocketOrderId);
+//     const status = await getOrderStatus(order.shiprocketOrderId);
 
-    if (status?.awbCode && !order.awbCode) {
-      order.awbCode = status.awbCode;
-      order.courierName = status.courierName;
-      await order.save();
-    }
+//     if (status?.awbCode && !order.awbCode) {
+//       order.awbCode = status.awbCode;
+//       order.courierName = status.courierName;
+//       await order.save();
+//     }
 
-    res.json({ success: true, tracking: status });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
+//     res.json({ success: true, tracking: status });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
 
 exports.getAllCustomDesignOrders = async (req, res) => {
   try {
