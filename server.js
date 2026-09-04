@@ -6,6 +6,7 @@ require("dotenv").config();
 const path = require("path");
 
 const app = express();
+const sitemapRoutes = require("./routes/sitemapRoutes");
 const productRoutes = require("./routes/productRoutes");
 const adminProductRoutes = require("./routes/adminProductRoutes");
 const authRoutes = require("./routes/authRoutes");
@@ -27,7 +28,7 @@ app.use(cors());
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
-
+app.use("/", sitemapRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/admin/products", adminProductRoutes);
 app.use("/api/auth", authRoutes);
