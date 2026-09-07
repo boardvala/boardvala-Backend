@@ -24,18 +24,7 @@ const featuredOrderRoutes = require("./routes/featuredOrderRoutes");
 const deliveryRoutes = require("./routes/deliveryRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 
-// ===== हे cors() च्या आधी जोडा =====
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
-  res.header("Access-Control-Allow-Credentials", "true");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
-  next();
-});
-
 app.use(cors());
-// ===== बाकी तसंच =====
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
