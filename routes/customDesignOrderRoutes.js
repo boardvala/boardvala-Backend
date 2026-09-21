@@ -11,6 +11,8 @@ const {
   updateCustomDesignStatus,
   getMyCustomDesignOrders,
   getMyCustomDesignOrderById,
+  updateOrderShipping,
+  trackOrderShipment ,
   //getOrderTracking,
   //getAdminOrderTracking,
 } = require("../controllers/customDesignOrderController");
@@ -42,6 +44,12 @@ router.get(
 // router.get("/:id/tracking", authMiddleware, getOrderTracking);
 // //for admin
 // router.get("/:id/admin-tracking", authMiddleware, adminMiddleware, getAdminOrderTracking);
+
+// Admin — shipping update
+router.put("/:id/shipping", authMiddleware, adminMiddleware, updateOrderShipping);
+
+// Admin + User — track shipment (Envia API)
+router.get("/:id/track", authMiddleware, trackOrderShipment);
 
 router.get("/:id", authMiddleware, adminMiddleware, getCustomDesignOrderById);
 

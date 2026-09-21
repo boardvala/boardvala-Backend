@@ -117,7 +117,6 @@ const customDesignOrderSchema = new mongoose.Schema(
     shippingStatus: {
       type: String,
       default: "Processing",
-      enum: ["Processing", "Shipped", "In Transit", "Delivered", "Cancelled"],
     },
 
     payment: {

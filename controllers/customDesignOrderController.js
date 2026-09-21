@@ -4,6 +4,7 @@ const uploadToCloudinary = require("../utils/cloudinaryUpload");
 const { getPriceForFrameSize } = require("./paymentController");
 const { calculateBannerPrice } = require("../utils/bannerPricing");
 const { sendOrderEmails } = require("../utils/orderEmails");
+const { trackShipment } = require("../utils/enviaTracking");
 //const { pushOrderToShiprocket } = require("../utils/shiprocketOrder");
 //const { getOrderStatus } = require("../utils/shiprocketTracking");
 
@@ -356,5 +357,48 @@ exports.getMyCustomDesignOrderById = async (req, res) => {
       success: false,
       message: "Failed to fetch order details",
     });
+  }
+};
+
+// ---- Admin: Update Shipping Details ----
+exports.updateOrderShipping = async (req, res) => {
+  try {
+    const order = await CustomDesignOrder.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    if (req.body.trackingNumber !== undefined) order.trackingNumber = req.body.trackingNumber;
+    if (req.body.courierName !== undefined) order.courierName = req.body.courierName;
+
+    await order.save();
+    res.json({ success: true, order });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ---- Track Shipment (Envia API) ----
+exports.trackOrderShipment = async (req, res) => {
+  try {
+    const order = await CustomDesignOrder.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    if (!order.trackingNumber) {
+      return res.json({ success: false, message: "No tracking number assigned yet." });
+    }
+
+    const tracking = await trackShipment(order.trackingNumber);
+    // DB मध्ये latest status update
+    if (tracking.success && tracking.status) {
+      order.shippingStatus = tracking.status;
+      await order.save();
+    }
+
+    res.json({ success: true, tracking });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };

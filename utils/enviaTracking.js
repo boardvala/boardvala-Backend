@@ -1,30 +1,38 @@
 const axios = require("axios");
 const { ENVIA_BASE, getEnviaHeaders } = require("./enviaAuth");
 
-/**
- * Track shipment by tracking number — Shiprocket trackByAwb चा replacement
- */
 async function trackShipment(trackingNumber) {
   try {
     const res = await axios.post(
-      `${ENVIA_BASE}/ship/tracking/`,
-      { trackingNumber },
+      `${ENVIA_BASE}/ship/generaltrack/`,
+      { trackingNumbers: [trackingNumber] },
       { headers: getEnviaHeaders() },
     );
 
-    const data = res.data?.data || res.data;
+    const shipment = res.data?.data?.[0];
+
+    if (!shipment) {
+      return {
+        success: false,
+        trackingNumber,
+        status: "No data found",
+        events: [],
+      };
+    }
 
     return {
       success: true,
-      trackingNumber: data.trackingNumber || trackingNumber,
-      status: data.status || data.shipmentStatus || "Unknown",
-      carrier: data.carrier || "",
-      events: (data.events || data.checkpoints || []).map((e) => ({
-        date: e.date || e.timestamp || "",
-        status: e.status || e.description || "",
-        location: e.location || e.city || "",
+      trackingNumber: shipment.trackingNumber || trackingNumber,
+      status: shipment.status || "Unknown",
+      carrier: shipment.carrier?.name || "",
+      signedBy: shipment.signedBy || "",
+      estimatedDelivery: shipment.estimatedDelivery || "",
+      trackUrl: shipment.trackUrl || "",
+      events: (shipment.eventHistory || []).map((ev) => ({
+        description: ev.description || "",
+        location: (ev.location || "").trim(),
+        date: ev.date || "",
       })),
-      estimatedDelivery: data.estimatedDelivery || "",
     };
   } catch (err) {
     console.error("Envia tracking failed:", err.response?.data || err.message);
