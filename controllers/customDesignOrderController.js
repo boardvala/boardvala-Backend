@@ -3,7 +3,7 @@ const Pricing = require("../models/Pricing");
 const uploadToCloudinary = require("../utils/cloudinaryUpload");
 const { getPriceForFrameSize } = require("./paymentController");
 const { calculateBannerPrice } = require("../utils/bannerPricing");
-const { sendOrderEmails } = require("../utils/orderEmails");
+const { sendOrderEmails, sendShippingEmail } = require("../utils/orderEmails");
 const { trackShipment } = require("../utils/enviaTracking");
 //const { pushOrderToShiprocket } = require("../utils/shiprocketOrder");
 //const { getOrderStatus } = require("../utils/shiprocketTracking");
@@ -165,14 +165,21 @@ exports.createCustomDesignOrder = async (req, res) => {
     // }
 
     try {
-      const designFile = await uploadToCloudinary(previewImage, "boardvala/custom-designs");
+      const designFile = await uploadToCloudinary(
+        previewImage,
+        "boardvala/custom-designs",
+      );
       order.designFile = {
         url: designFile.secure_url,
         publicId: designFile.public_id,
       };
       await order.save();
     } catch (imgErr) {
-      console.error("Cloudinary upload failed, order:", order._id, imgErr.message);
+      console.error(
+        "Cloudinary upload failed, order:",
+        order._id,
+        imgErr.message,
+      );
     }
 
     res.status(201).json({
@@ -213,7 +220,7 @@ exports.createCustomDesignOrder = async (req, res) => {
 //   } catch (err) {
 //     res.status(500).json({ success: false, message: err.message });
 //   }
-// }; 
+// };
 
 // exports.getAdminOrderTracking = async (req, res) => {
 //   try {
@@ -365,13 +372,28 @@ exports.updateOrderShipping = async (req, res) => {
   try {
     const order = await CustomDesignOrder.findById(req.params.id);
     if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
-    if (req.body.trackingNumber !== undefined) order.trackingNumber = req.body.trackingNumber;
-    if (req.body.courierName !== undefined) order.courierName = req.body.courierName;
+    if (req.body.trackingNumber !== undefined)
+      order.trackingNumber = req.body.trackingNumber;
+    if (req.body.courierName !== undefined)
+      order.courierName = req.body.courierName;
 
     await order.save();
+
+    // Tracking number save झाल्यावर → shipping email send
+    if (req.body.trackingNumber && order.customerEmail) {
+      try {
+        await sendShippingEmail(order);
+      } catch (emailErr) {
+        console.error("Shipping email failed:", emailErr.message);
+        // Email fail → order save तरी success
+      }
+    }
+
     res.json({ success: true, order });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -383,11 +405,16 @@ exports.trackOrderShipment = async (req, res) => {
   try {
     const order = await CustomDesignOrder.findById(req.params.id);
     if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Order not found" });
     }
 
     if (!order.trackingNumber) {
-      return res.json({ success: false, message: "No tracking number assigned yet." });
+      return res.json({
+        success: false,
+        message: "No tracking number assigned yet.",
+      });
     }
 
     const tracking = await trackShipment(order.trackingNumber);
