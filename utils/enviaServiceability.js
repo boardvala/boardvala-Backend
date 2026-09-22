@@ -49,20 +49,20 @@ async function checkPincodeServiceability(deliveryPincode) {
         result.value?.data?.meta === "rate" &&
         Array.isArray(result.value.data.data)
       ) {
-        allRates.push(...result.value.data.data);
+        result.value.data.data.forEach((rate) => {
+      const service = (rate.service || rate.serviceDescription || "").toLowerCase();
+      // Air skip, surface/ground keep
+      if (!service.includes("air")) {
+        allRates.push(rate);
+      }
+    });
       }
     });
 
     if (allRates.length > 0) {
-      const fastest = allRates.reduce((a, b) => {
-        const daysA = a.deliveryDate?.dateDifference || 99;
-        const daysB = b.deliveryDate?.dateDifference || 99;
-        return daysA < daysB ? a : b;
-      });
-
       return {
         available: true,
-        estimatedDays: fastest.deliveryEstimate || `${fastest.deliveryDate?.dateDifference || "3-5"}`,
+        estimatedDays: allRates[0].deliveryEstimate || allRates[0].deliveryDate?.dateDifference || "3-7",
         carrierCount: allRates.length,
       };
     }
