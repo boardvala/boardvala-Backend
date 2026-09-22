@@ -116,7 +116,7 @@ const customDesignOrderSchema = new mongoose.Schema(
     courierName: { type: String, default: "" },
     shippingStatus: {
       type: String,
-      default: "Processing",
+      default: "Picked Up",
     },
 
     payment: {

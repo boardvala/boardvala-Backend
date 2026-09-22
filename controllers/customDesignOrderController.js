@@ -383,18 +383,19 @@ exports.updateOrderShipping = async (req, res) => {
       order.courierName = req.body.courierName;
 
     await order.save();
-
+    let emailSent = false;
     // Tracking number save झाल्यावर → shipping email send
     if (req.body.trackingNumber && order.customerEmail) {
       try {
         await sendShippingEmail(order);
+        emailSent = true;
       } catch (emailErr) {
         console.error("Shipping email failed:", emailErr.message);
         // Email fail → order save तरी success
       }
     }
 
-    res.json({ success: true, order });
+    res.json({ success: true, order, emailSent });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

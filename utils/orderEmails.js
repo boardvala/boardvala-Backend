@@ -12,53 +12,120 @@ function isBanner(order) {
 
 // order च्या प्रकारानुसार details ओळी (rows) बनवतो.
 function detailRows(order) {
+  const rowStyle = 'padding: 6px 0; color: #6b7280; font-size: 14px;';
+  const valStyle = 'padding: 6px 0; font-weight: 600; color: #1b263b; font-size: 14px; text-align: right;';
+  const amtStyle = 'padding: 8px 0; font-weight: 700; color: #16a34a; font-size: 18px; text-align: right; border-top: 1px solid #e2e8f0;';
+  const amtLabelStyle = 'padding: 8px 0; color: #6b7280; font-size: 14px; border-top: 1px solid #e2e8f0;';
+
   if (isFeatured(order)) {
-    // ---- Featured product ----
     return `
-      <tr><td style="padding:8px 0; color:#64748b;">Product</td><td style="padding:8px 0; text-align:right;">${order.title}</td></tr>
-      <tr><td style="padding:8px 0; color:#64748b;">Quantity</td><td style="padding:8px 0; text-align:right;">${order.quantity || 1}</td></tr>
-      <tr><td style="padding:8px 0; color:#64748b;">Amount</td><td style="padding:8px 0; text-align:right; font-weight:bold;">₹${order.totalAmount}</td></tr>
+      <tr><td style="${rowStyle}">Product</td><td style="${valStyle}">${order.title}</td></tr>
+      <tr><td style="${rowStyle}">Quantity</td><td style="${valStyle}">${order.quantity || 1}</td></tr>
+      <tr><td style="${amtLabelStyle}">Amount Paid</td><td style="${amtStyle}">₹ ${order.totalAmount}</td></tr>
     `;
   }
 
-  // ---- Custom design (banner की fixed) ----
   const orientationRow = isBanner(order)
-    ? "" // banner ला orientation दाखवायचं नाही
-    : `<tr><td style="padding:8px 0; color:#64748b;">Orientation</td><td style="padding:8px 0; text-align:right;">${order.orientation}</td></tr>`;
+    ? ""
+    : `<tr><td style="${rowStyle}">Orientation</td><td style="${valStyle}">${order.orientation}</td></tr>`;
 
   const sizeLabel = isBanner(order) ? "Banner Size" : "Size";
 
   return `
-    <tr><td style="padding:8px 0; color:#64748b;">Material</td><td style="padding:8px 0; text-align:right;">${order.material}</td></tr>
-    <tr><td style="padding:8px 0; color:#64748b;">${sizeLabel}</td><td style="padding:8px 0; text-align:right;">${order.frameSize}</td></tr>
+    <tr><td style="${rowStyle}">Material</td><td style="${valStyle}">${order.material}</td></tr>
+    <tr><td style="${rowStyle}">${sizeLabel}</td><td style="${valStyle}">${order.frameSize}</td></tr>
     ${orientationRow}
-    <tr><td style="padding:8px 0; color:#64748b;">Quantity</td><td style="padding:8px 0; text-align:right;">${order.quantity || 1}</td></tr>
-    <tr><td style="padding:8px 0; color:#64748b;">Amount</td><td style="padding:8px 0; text-align:right; font-weight:bold;">₹${order.totalAmount}</td></tr>
+    <tr><td style="${rowStyle}">Quantity</td><td style="${valStyle}">${order.quantity || 1}</td></tr>
+    <tr><td style="${amtLabelStyle}">Amount Paid</td><td style="${amtStyle}">₹ ${order.totalAmount}</td></tr>
   `;
 }
 
 // ---- Templates ----
 function customerOrderHtml(order) {
-  const orderKind = isFeatured(order) ? "order" : "custom design order";
+  const orderKind = isFeatured(order) ? "featured product" : isBanner(order) ? "custom banner" : "custom design";
+  const orderId = order._id.toString().slice(-6).toUpperCase();
 
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: auto; color:#0f172a;">
-      <h2 style="color:#0f172a;">Thank you for your order! 🎉</h2>
-      <p>Hi ${order.customerName}, we've received your ${orderKind}. Here are the details:</p>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+      
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #1b263b 0%, #243c63 100%); padding: 30px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Order Confirmed! 🎉</h1>
+        <p style="color: #94a3b8; margin: 8px 0 0; font-size: 14px;">BoardVala — Custom UV Printing</p>
+      </div>
 
-      <table style="width:100%; border-collapse: collapse; margin: 18px 0;">
-        <tr><td style="padding:8px 0; color:#64748b;">Order ID</td><td style="padding:8px 0; text-align:right; font-weight:bold;">#${order._id.toString().slice(-6).toUpperCase()}</td></tr>
-        ${detailRows(order)}
-      </table>
+      <!-- Body -->
+      <div style="padding: 30px;">
+        
+        <p style="font-size: 16px; color: #1b263b;">Hi <strong>${order.customerName}</strong>,</p>
+        
+        <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+          Thank you for your order! We've received your ${orderKind} order and will start crafting it soon.
+        </p>
 
-      <p style="color:#64748b;"><strong>Delivery to:</strong><br/>
-        ${order.customerName}<br/>
-        ${order.customerAddress}<br/>
-        Phone: ${order.customerPhone}
-      </p>
+        <!-- Order ID -->
+        <div style="text-align: center; margin: 20px 0;">
+          <span style="background: #1b263b; color: #fff; padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+            Order #${orderId}
+          </span>
+        </div>
 
-      <p>We'll start crafting your order and keep you updated. For any queries, just reply to this email.</p>
-      <p style="margin-top:24px;">— Team BoardVala</p>
+        <!-- Order Details -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0;">
+          <h3 style="margin: 0 0 12px; color: #1b263b; font-size: 16px;">📦 Order Details</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            ${detailRows(order)}
+          </table>
+        </div>
+
+        <!-- Payment -->
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px 20px; margin: 20px 0; text-align: center;">
+          <span style="color: #16a34a; font-weight: 700; font-size: 14px;">✅ Payment Successful</span>
+        </div>
+
+        <!-- Delivery Address -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0;">
+          <h3 style="margin: 0 0 12px; color: #1b263b; font-size: 16px;">📍 Delivery Address</h3>
+          <p style="margin: 0; color: #334155; font-size: 14px; line-height: 1.6;">
+            <strong>${order.customerName}</strong><br>
+            ${order.customerAddress || ""}<br>
+            ${order.customerCity || ""}, ${order.customerState || ""} - ${order.customerPincode || ""}<br>
+            📞 ${order.customerPhone || ""}
+            ${order.customerEmail ? `<br>✉️ ${order.customerEmail}` : ""}
+          </p>
+        </div>
+
+        <!-- What's Next -->
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 20px; margin: 20px 0;">
+          <h3 style="margin: 0 0 12px; color: #1b263b; font-size: 16px;">🔜 What's Next?</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr><td style="padding: 6px 0; font-size: 14px; color: #334155;"><strong style="color: #2563eb;">1.</strong> We'll start production of your order</td></tr>
+            <tr><td style="padding: 6px 0; font-size: 14px; color: #334155;"><strong style="color: #2563eb;">2.</strong> Dispatched within 3-5 business days</td></tr>
+            <tr><td style="padding: 6px 0; font-size: 14px; color: #334155;"><strong style="color: #2563eb;">3.</strong> You'll receive tracking details via email</td></tr>
+          </table>
+        </div>
+
+        <!-- CTA -->
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://boardvala.com/account/orders" 
+             style="background: #1b263b; color: #ffffff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">
+            View My Orders →
+          </a>
+        </div>
+
+        <p style="font-size: 13px; color: #94a3b8; line-height: 1.5; margin-top: 20px;">
+          If you have any questions about your order, reply to this email or contact us on WhatsApp. We're happy to help!
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div style="background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+        <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+          BoardVala.com — Custom UV Printing & Home Decor<br>
+          © ${new Date().getFullYear()} BoardVala. All rights reserved.
+        </p>
+      </div>
+
     </div>
   `;
 }
@@ -71,24 +138,92 @@ function adminOrderHtml(order) {
     typeLabel = "Banner";
   }
 
+  const orderId = order._id.toString().slice(-6).toUpperCase();
+
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 520px; margin: auto; color:#0f172a;">
-      <h2 style="color:#2563eb;">New Order Received</h2>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
+      
+      <!-- Header -->
+      <div style="background: linear-gradient(135deg, #1b263b 0%, #243c63 100%); padding: 30px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 24px;">New Order Received! 🛒</h1>
+        <p style="color: #94a3b8; margin: 8px 0 0; font-size: 14px;">BoardVala Admin</p>
+      </div>
 
-      <table style="width:100%; border-collapse: collapse; margin: 18px 0;">
-        <tr><td style="padding:8px 0; color:#64748b;">Order ID</td><td style="padding:8px 0; text-align:right; font-weight:bold;">#${order._id.toString().slice(-6).toUpperCase()}</td></tr>
-        <tr><td style="padding:8px 0; color:#64748b;">Type</td><td style="padding:8px 0; text-align:right;">${typeLabel}</td></tr>
-        ${detailRows(order)}
-      </table>
+      <!-- Body -->
+      <div style="padding: 30px;">
 
-      <p style="color:#64748b;"><strong>Customer:</strong><br/>
-        ${order.customerName}<br/>
-        ${order.customerAddress}<br/>
-        Phone: ${order.customerPhone}<br/>
-        Email: ${order.customerEmail || "Not provided"}
-      </p>
+        <!-- Order ID + Type -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <span style="background: #1b263b; color: #fff; padding: 8px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+            Order #${orderId}
+          </span>
+          <span style="background: #eff6ff; color: #2563eb; padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;">
+            ${typeLabel}
+          </span>
+        </div>
 
-      ${order.instructions ? `<p style="color:#64748b;"><strong>Instructions:</strong> ${order.instructions}</p>` : ""}
+        <!-- Order Details -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0;">
+          <h3 style="margin: 0 0 12px; color: #1b263b; font-size: 16px;">📦 Order Details</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            ${detailRows(order)}
+          </table>
+        </div>
+
+        <!-- Customer Info -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0;">
+          <h3 style="margin: 0 0 12px; color: #1b263b; font-size: 16px;">👤 Customer Details</h3>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Name</td>
+              <td style="padding: 6px 0; font-weight: 600; color: #1b263b; font-size: 14px; text-align: right;">${order.customerName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Phone</td>
+              <td style="padding: 6px 0; font-weight: 600; color: #1b263b; font-size: 14px; text-align: right;">📞 ${order.customerPhone}</td>
+            </tr>
+            <tr>
+              <td style="padding: 6px 0; color: #6b7280; font-size: 14px;">Email</td>
+              <td style="padding: 6px 0; font-weight: 600; color: #1b263b; font-size: 14px; text-align: right;">${order.customerEmail || "Not provided"}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Delivery Address -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 20px 0;">
+          <h3 style="margin: 0 0 12px; color: #1b263b; font-size: 16px;">📍 Delivery Address</h3>
+          <p style="margin: 0; color: #334155; font-size: 14px; line-height: 1.6;">
+            ${order.customerAddress || ""}<br>
+            ${order.customerCity || ""}, ${order.customerState || ""} - ${order.customerPincode || ""}
+          </p>
+        </div>
+
+        <!-- Special Instructions -->
+        ${order.instructions ? `
+        <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 20px; margin: 20px 0;">
+          <h3 style="margin: 0 0 8px; color: #92400e; font-size: 16px;">📝 Special Instructions</h3>
+          <p style="margin: 0; color: #78350f; font-size: 14px; line-height: 1.5;">${order.instructions}</p>
+        </div>
+        ` : ""}
+
+        <!-- CTA -->
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://boardvala.com/admin/custom-design-orders/${order._id}" 
+             style="background: #2563eb; color: #ffffff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px; display: inline-block;">
+            View Order Details →
+          </a>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div style="background: #f8fafc; padding: 20px; text-align: center; border-top: 1px solid #e2e8f0;">
+        <p style="margin: 0; color: #94a3b8; font-size: 12px;">
+          BoardVala Admin Panel<br>
+          © ${new Date().getFullYear()} BoardVala. All rights reserved.
+        </p>
+      </div>
+
     </div>
   `;
 }
@@ -238,7 +373,7 @@ async function sendShippingEmail(order) {
     </div>
   `;
 
-  await sendMail(customerEmail, subject, html);
+  await sendEmail({to: customerEmail, subject: subject, html: html});
 }
 
 module.exports = { sendOrderEmails, sendShippingEmail  };
