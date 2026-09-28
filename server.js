@@ -23,6 +23,7 @@ const featuredProductRoutes = require("./routes/featuredProductRoutes");
 const featuredOrderRoutes = require("./routes/featuredOrderRoutes");
 const deliveryRoutes = require("./routes/deliveryRoutes");
 const projectRoutes = require("./routes/projectRoutes");
+const blogRoutes = require("./routes/blogRoutes");
 
 app.use(cors());
 
@@ -49,6 +50,7 @@ app.use("/api/featured-products", featuredProductRoutes);
 app.use("/api/featured-orders", featuredOrderRoutes);
 app.use("/api/delivery", deliveryRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/blogs", blogRoutes);
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
