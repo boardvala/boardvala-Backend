@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 
 const surveySchema = new mongoose.Schema(
   {
-    source: { type: String, required: true },
+    type: { type: String, enum: ["impression", "answer", "skip"], required: true },
+    source: { type: String, default: "" },
     page: { type: String, default: "/" },
   },
   { timestamps: true }
