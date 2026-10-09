@@ -1,6 +1,31 @@
+const mongoose = require("mongoose");
 const FeaturedProduct = require("../models/FeaturedProduct");
 const uploadToCloudinary = require("../utils/cloudinaryUpload");
 const deleteFromCloudinary = require("../utils/cloudinaryDelete");
+
+function generateSlug(title) {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+async function getUniqueSlug(title, excludeId = null) {
+  let slug = generateSlug(title);
+  let count = 0;
+  let candidate = slug;
+  while (true) {
+    const query = { slug: candidate };
+    if (excludeId) query._id = { $ne: excludeId };
+    const exists = await FeaturedProduct.findOne(query);
+    if (!exists) return candidate;
+    count++;
+    candidate = `${slug}-${count}`;
+  }
+}
 
 // ---- Create ----
 exports.createFeaturedProduct = async (req, res) => {
@@ -28,8 +53,11 @@ exports.createFeaturedProduct = async (req, res) => {
       }
     }
 
+    const slug = await getUniqueSlug(req.body.title);
+
     const product = await FeaturedProduct.create({
       title: req.body.title,
+      slug,
       description: req.body.description,
       price: req.body.price,
       category: req.body.category,
@@ -69,10 +97,18 @@ exports.getFeaturedProducts = async (req, res) => {
 // ---- Get one ----
 exports.getFeaturedProduct = async (req, res) => {
   try {
-    const product = await FeaturedProduct.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: "Product not found" });
+    const param = req.params.id;
+    let product;
+
+    if (mongoose.Types.ObjectId.isValid(param) && param.length === 24) {
+      product = await FeaturedProduct.findById(param);
     }
+
+    if (!product) {
+      product = await FeaturedProduct.findOne({ slug: param });
+    }
+
+    if (!product) return res.status(404).json({ message: "Product not found" });
     res.json(product);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -85,6 +121,10 @@ exports.updateFeaturedProduct = async (req, res) => {
     const product = await FeaturedProduct.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
+    }
+
+    if (req.body.title && req.body.title !== product.title) {
+      product.slug = await getUniqueSlug(req.body.title, product._id);
     }
 
     if (req.body.title !== undefined) product.title = req.body.title;

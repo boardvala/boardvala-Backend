@@ -8,6 +8,12 @@ const featuredProductSchema = new mongoose.Schema(
       trim: true,
     },
 
+    slug: {
+      type: String,
+      unique: true,
+      trim: true,
+    },
+
     description: {
       type: String,
       default: "",
