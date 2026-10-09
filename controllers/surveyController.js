@@ -3,7 +3,7 @@ const Survey = require("../models/Survey");
 exports.submitSurvey = async (req, res) => {
   try {
     await Survey.create({
-      type: req.body.type || "answer",
+      type: req.body.type || "impression",
       source: req.body.source || "",
       page: req.body.page || "/",
     });
@@ -16,21 +16,20 @@ exports.submitSurvey = async (req, res) => {
 exports.getSurveyStats = async (req, res) => {
   try {
     const impressions = await Survey.countDocuments({ type: "impression" });
-    const answers = await Survey.countDocuments({ type: "answer" });
-    const skips = await Survey.countDocuments({ type: "skip" });
 
-    const sources = await Survey.aggregate([
-      { $match: { type: "answer" } },
-      { $group: { _id: "$source", count: { $sum: 1 } } },
+    // page-wise impression count (MongoDB aggregation)
+    const pages = await Survey.aggregate([
+      { $match: { type: "impression" } },
+      { $group: { _id: "$page", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
     ]);
 
-    const recent = await Survey.find({ type: "answer" })
+    const recent = await Survey.find({ type: "impression" })
       .sort({ createdAt: -1 })
       .limit(20)
       .lean();
 
-    res.json({ impressions, answers, skips, sources, recent });
+    res.json({ impressions, pages, recent });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

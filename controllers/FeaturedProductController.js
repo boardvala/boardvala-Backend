@@ -18,6 +18,16 @@ exports.createFeaturedProduct = async (req, res) => {
       }),
     );
 
+    // sizes parse (JSON string → array)
+    let sizes = [];
+    if (req.body.sizes) {
+      try {
+        sizes = JSON.parse(req.body.sizes);
+      } catch {
+        sizes = [];
+      }
+    }
+
     const product = await FeaturedProduct.create({
       title: req.body.title,
       description: req.body.description,
@@ -30,6 +40,8 @@ exports.createFeaturedProduct = async (req, res) => {
         req.body.waterproof === "true" || req.body.waterproof === true,
       inStock: req.body.inStock === "true" || req.body.inStock === true,
       active: req.body.active === "true" || req.body.active === true,
+      isCustomizable: req.body.isCustomizable === "true",
+      sizes,
       images,
     });
 
@@ -97,6 +109,14 @@ exports.updateFeaturedProduct = async (req, res) => {
       product.active = req.body.active === "true" || req.body.active === true;
     }
 
+    if (req.body.isCustomizable !== undefined) {
+      product.isCustomizable =
+        req.body.isCustomizable === "true" || req.body.isCustomizable === true;
+    }
+    if (req.body.sizes !== undefined) {
+      product.sizes = req.body.sizes;
+    }
+
     // images ला हात लावत नाही — तशाच राहतात.
 
     await product.save();
@@ -106,7 +126,6 @@ exports.updateFeaturedProduct = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 // ---- Add Images ----
 exports.addFeaturedProductImages = async (req, res) => {
@@ -164,7 +183,6 @@ exports.addFeaturedProductImages = async (req, res) => {
     });
   }
 };
-
 
 // ---- Delete Single Image ----
 exports.deleteFeaturedProductImage = async (req, res) => {

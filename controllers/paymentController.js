@@ -55,6 +55,27 @@ async function getItemTotal(item) {
     return price * item.quantity;
   }
 
+  // LED Frame — price from selected size
+  if (item.orderType === "ledFrame") {
+    const product = await FeaturedProduct.findById(item.featuredProductId);
+    if (!product || !product.active || !product.inStock) {
+      throw new Error("LED Frame product not available.");
+    }
+
+    if (product.sizes?.length > 0 && item.frameSize) {
+      const sizeName = item.frameSize.split("(")[0].trim().toUpperCase();
+      const matchedSize = product.sizes.find(
+        (s) => s.name.trim().toUpperCase() === sizeName
+      );
+      if (matchedSize) {
+        return matchedSize.price * item.quantity;
+      }
+    }
+
+    // Fallback — product default price
+    return product.price * item.quantity;
+  }
+
   // custom design — banner की fixed, material च्या pricingType वरून
   const pricing = await Pricing.findOne({ material: item.material });
 

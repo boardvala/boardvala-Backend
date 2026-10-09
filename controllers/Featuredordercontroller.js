@@ -1,7 +1,9 @@
 const FeaturedOrder = require("../models/Featuredorder");
 const FeaturedProduct = require("../models/FeaturedProduct");
 const { getFeaturedProductPrice } = require("./paymentController");
-const { sendOrderEmails } = require("../utils/orderEmails");
+const { sendOrderEmails, sendShippingEmail } = require("../utils/orderEmails");
+const uploadToCloudinary = require("../utils/cloudinaryUpload");
+const { trackShipment } = require("../utils/enviaTracking");
 //const { pushOrderToShiprocket } = require("../utils/shiprocketOrder");
 //const { getOrderStatus } = require("../utils/shiprocketTracking");
 
@@ -60,8 +62,37 @@ exports.createFeaturedOrder = async (req, res) => {
     }
 
     // किंमत database मधून (active + inStock तपासतो)
-    const price = await getFeaturedProductPrice(featuredProductId);
+    let price = await getFeaturedProductPrice(featuredProductId);
     const qty = quantity || 1;
+
+    // LED Frame — price from selected size
+    if (
+      req.body.orderType === "ledFrame" &&
+      req.body.frameSize &&
+      product.sizes?.length > 0
+    ) {
+      const sizeName = req.body.frameSize.split("(")[0].trim(); // "A4 (9 × 12 inch)" → "A4"
+      const matchedSize = product.sizes.find((s) => s.name === sizeName);
+      if (matchedSize) {
+        price = matchedSize.price;
+      }
+    }
+    // LED Frame — upload customer photo to Cloudinary
+    let customerPhotoUrl = "";
+    if (req.body.customPhoto && req.body.orderType === "ledFrame") {
+      try {
+        // base64 → buffer → cloudinary
+        const base64Data = req.body.customPhoto.split(",")[1];
+        const buffer = Buffer.from(base64Data, "base64");
+        const uploadResult = await uploadToCloudinary(
+          { buffer, mimetype: "image/jpeg" },
+          "boardvala/led-frame-orders",
+        );
+        customerPhotoUrl = uploadResult.secure_url;
+      } catch (err) {
+        console.log("LED frame photo upload failed:", err.message);
+      }
+    }
     const order = await FeaturedOrder.create({
       user: req.user ? req.user.id : null,
       featuredProduct: product._id,
@@ -82,6 +113,9 @@ exports.createFeaturedOrder = async (req, res) => {
       customerState, // ← नवीन
       customerPincode,
       payment,
+      orderType: req.body.orderType || "featuredProduct",
+      frameSize: req.body.frameSize || "",
+      customerPhoto: customerPhotoUrl || "",
     });
 
     try {
@@ -284,5 +318,67 @@ exports.getMyFeaturedOrderById = async (req, res) => {
       success: false,
       message: "Failed to fetch order details",
     });
+  }
+};
+
+// ---- Admin: Update Shipping Details ----
+exports.updateFeaturedOrderShipping = async (req, res) => {
+  try {
+    const order = await FeaturedOrder.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    const wasEmpty = !order.trackingNumber;
+
+    if (req.body.trackingNumber !== undefined)
+      order.trackingNumber = req.body.trackingNumber;
+    if (req.body.courierName !== undefined)
+      order.courierName = req.body.courierName;
+
+    await order.save();
+
+    let emailSent = false;
+    // First time tracking number save → shipping email
+    if (wasEmpty && req.body.trackingNumber && order.customerEmail) {
+      try {
+        await sendShippingEmail(order);
+        emailSent = true;
+      } catch (emailErr) {
+        console.error("Shipping email failed:", emailErr.message);
+      }
+    }
+
+    res.json({ success: true, order, emailSent });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ---- Track Shipment (Envia API) ----
+exports.trackFeaturedOrderShipment = async (req, res) => {
+  try {
+    const order = await FeaturedOrder.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    if (!order.trackingNumber) {
+      return res.json({
+        success: false,
+        message: "No tracking number assigned yet.",
+      });
+    }
+
+    const tracking = await trackShipment(order.trackingNumber);
+
+    if (tracking.success && tracking.status) {
+      order.shippingStatus = tracking.status;
+      await order.save();
+    }
+
+    res.json({ success: true, tracking });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };

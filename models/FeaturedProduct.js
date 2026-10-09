@@ -62,6 +62,21 @@ const featuredProductSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    // LED Frame — customizable product (photo upload required)
+    isCustomizable: {
+      type: Boolean,
+      default: false,
+    },
+
+    // Multiple sizes with pricing (LED frames)
+    sizes: [
+      {
+        name: { type: String }, // "A5", "A4", "A3"
+        dimensions: { type: String }, // "6×8 inch", "8×12 inch"
+        price: { type: Number }, // size-specific price
+      },
+    ],
   },
 
   {

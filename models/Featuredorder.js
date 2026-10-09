@@ -58,8 +58,7 @@ const featuredOrderSchema = new mongoose.Schema(
     courierName: { type: String, default: "" },
     shippingStatus: {
       type: String,
-      default: "Processing",
-      enum: ["Processing", "Shipped", "In Transit", "Delivered", "Cancelled"],
+      default: "Picked Up",
     },
 
     // payment ref
@@ -74,6 +73,10 @@ const featuredOrderSchema = new mongoose.Schema(
       enum: ["pending", "processing", "completed", "cancelled"],
       default: "pending",
     },
+
+    customerPhoto: { type: String, default: "" },
+    frameSize: { type: String, default: "" },
+    orderType: { type: String, default: "featuredProduct" },
   },
   {
     timestamps: true,
