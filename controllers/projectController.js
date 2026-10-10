@@ -68,6 +68,7 @@ exports.getFeaturedProjects = async (req, res) => {
 };
 
 // Admin — project update
+// Admin — project update
 exports.updateProject = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
@@ -84,6 +85,44 @@ exports.updateProject = async (req, res) => {
     }
     if (req.body.active !== undefined) {
       project.active = req.body.active === "true" || req.body.active === true;
+    }
+
+    // ── Remove selected images from Cloudinary ──
+    if (req.body.removeImages) {
+      const toRemove = JSON.parse(req.body.removeImages);
+      for (const imgId of toRemove) {
+        try {
+          await deleteFromCloudinary(imgId);
+        } catch (e) {
+          console.log("Cloudinary delete error:", e.message);
+        }
+      }
+      // Remove from project.images array
+      project.images = project.images.filter((img) => {
+        const id = img.publicId || img;
+        return !toRemove.includes(id);
+      });
+
+      // Update coverImage if it was removed
+      if (project.coverImage && toRemove.includes(project.coverImage.publicId)) {
+        project.coverImage = project.images.length > 0 ? project.images[0] : null;
+      }
+    }
+
+    // ── Add new images to Cloudinary ──
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const result = await uploadToCloudinary(file, "boardvala/projects");
+        project.images.push({
+          url: result.secure_url,
+          publicId: result.public_id,
+        });
+      }
+
+      // Set coverImage if not set
+      if (!project.coverImage && project.images.length > 0) {
+        project.coverImage = project.images[0];
+      }
     }
 
     await project.save();
