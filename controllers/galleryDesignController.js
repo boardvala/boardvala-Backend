@@ -2,6 +2,30 @@ const GalleryDesign = require("../models/GalleryDesign");
 const uploadToCloudinary = require("../utils/cloudinaryUpload");
 const deleteFromCloudinary = require("../utils/cloudinaryDelete");
 
+// Generate slug from title
+function generateSlug(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+async function getUniqueSlug(title, excludeId = null) {
+  let slug = generateSlug(title);
+  let count = 0;
+  let candidate = slug;
+  while (true) {
+    const query = { slug: candidate };
+    if (excludeId) query._id = { $ne: excludeId };
+    const exists = await GalleryDesign.findOne(query);
+    if (!exists) return candidate;
+    count++;
+    candidate = `${slug}-${count}`;
+  }
+}
+
 exports.createGalleryDesign = async (req, res) => {
   try {
     // Upload all images to Cloudinary
@@ -18,16 +42,12 @@ exports.createGalleryDesign = async (req, res) => {
 
     const design = await GalleryDesign.create({
       title: req.body.title,
-
       description: req.body.description,
-
       category: req.body.category,
-
       featured: req.body.featured === "true",
-
       active: req.body.active === "true",
-
       images,
+      slug: await getUniqueSlug(req.body.title),
     });
 
     res.status(201).json(design);
@@ -52,9 +72,18 @@ exports.getGalleryDesigns = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 exports.getGalleryDesign = async (req, res) => {
   try {
-    const design = await GalleryDesign.findById(req.params.id);
+    const { id } = req.params;
+    // Try slug first, then ObjectId
+    let design;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      design = await GalleryDesign.findById(id);
+    }
+    if (!design) {
+      design = await GalleryDesign.findOne({ slug: id });
+    }
     if (!design) {
       return res.status(404).json({ message: "Design not found" });
     }
@@ -98,12 +127,17 @@ exports.deleteGalleryDesign = async (req, res) => {
 exports.getSimilarGalleryDesigns = async (req, res) => {
   try {
     // Find current design
-    const currentDesign = await GalleryDesign.findById(req.params.id);
+    const { id } = req.params;
+    let currentDesign;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      currentDesign = await GalleryDesign.findById(id);
+    }
+    if (!currentDesign) {
+      currentDesign = await GalleryDesign.findOne({ slug: id });
+    }
 
     if (!currentDesign) {
-      return res.status(404).json({
-        message: "Design not found",
-      });
+      return res.status(404).json({ message: "Design not found" });
     }
 
     // Find similar designs from same category
@@ -120,6 +154,7 @@ exports.getSimilarGalleryDesigns = async (req, res) => {
       id: design._id,
       type: "gallery",
       name: design.title,
+      slug: design.slug,
       previewImage: design.images[0],
       category: design.category,
     }));
@@ -148,7 +183,10 @@ exports.updateGalleryDesign = async (req, res) => {
     }
 
     // फक्त details बदला (जे पाठवलं तेच; नाहीतर जुनं ठेवा)
-    if (req.body.title !== undefined) design.title = req.body.title;
+         if (req.body.title !== undefined) {
+      design.title = req.body.title;
+      design.slug = await getUniqueSlug(req.body.title, design._id);
+    }
     if (req.body.description !== undefined)
       design.description = req.body.description;
     if (req.body.category !== undefined) design.category = req.body.category;

@@ -20,6 +20,12 @@ const galleryDesignSchema = new mongoose.Schema(
       trim: true,
     },
 
+    slug: {
+      type: String,
+      unique: true,
+      trim: true,
+    },
+
     images: [
       {
         url: {
@@ -46,7 +52,7 @@ const galleryDesignSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("GalleryDesign", galleryDesignSchema);
