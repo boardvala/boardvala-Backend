@@ -2,6 +2,31 @@ const Project = require("../models/Project");
 const uploadToCloudinary = require("../utils/cloudinaryUpload");
 const deleteFromCloudinary = require("../utils/cloudinaryDelete");
 
+// Slug generate from title
+function generateSlug(title) {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+// Unique slug — duplicate title handle
+async function getUniqueSlug(title, excludeId = null) {
+  let slug = generateSlug(title);
+  let count = 0;
+  let candidate = slug;
+  while (true) {
+    const query = { slug: candidate };
+    if (excludeId) query._id = { $ne: excludeId };
+    const exists = await Project.findOne(query);
+    if (!exists) return candidate;
+    count++;
+    candidate = `${slug}-${count}`;
+  }
+}
+
 // Admin — नवीन project बनवा
 exports.createProject = async (req, res) => {
   try {
@@ -17,6 +42,7 @@ exports.createProject = async (req, res) => {
 
     const project = await Project.create({
       title: req.body.title,
+      slug: await getUniqueSlug(req.body.title),
       description: req.body.description || "",
       category: req.body.category,
       location: req.body.location || "",
@@ -43,10 +69,17 @@ exports.getAllProjects = async (req, res) => {
   }
 };
 
-// Public — एक project (details page)
+// Public — एक project (details page) — ID आणि slug दोन्ही support
 exports.getProject = async (req, res) => {
   try {
-    const project = await Project.findById(req.params.id);
+    const { id } = req.params;
+    let project;
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      project = await Project.findById(id);
+    }
+    if (!project) {
+      project = await Project.findOne({ slug: id });
+    }
     if (!project) {
       return res.status(404).json({ success: false, message: "Project not found" });
     }
@@ -68,7 +101,6 @@ exports.getFeaturedProjects = async (req, res) => {
 };
 
 // Admin — project update
-// Admin — project update
 exports.updateProject = async (req, res) => {
   try {
     const project = await Project.findById(req.params.id);
@@ -76,7 +108,10 @@ exports.updateProject = async (req, res) => {
       return res.status(404).json({ success: false, message: "Project not found" });
     }
 
-    if (req.body.title !== undefined) project.title = req.body.title;
+    if (req.body.title !== undefined) {
+      project.title = req.body.title;
+      project.slug = await getUniqueSlug(req.body.title, project._id);
+    }
     if (req.body.description !== undefined) project.description = req.body.description;
     if (req.body.category !== undefined) project.category = req.body.category;
     if (req.body.location !== undefined) project.location = req.body.location;
@@ -97,13 +132,11 @@ exports.updateProject = async (req, res) => {
           console.log("Cloudinary delete error:", e.message);
         }
       }
-      // Remove from project.images array
       project.images = project.images.filter((img) => {
         const id = img.publicId || img;
         return !toRemove.includes(id);
       });
 
-      // Update coverImage if it was removed
       if (project.coverImage && toRemove.includes(project.coverImage.publicId)) {
         project.coverImage = project.images.length > 0 ? project.images[0] : null;
       }
@@ -119,7 +152,6 @@ exports.updateProject = async (req, res) => {
         });
       }
 
-      // Set coverImage if not set
       if (!project.coverImage && project.images.length > 0) {
         project.coverImage = project.images[0];
       }
@@ -140,7 +172,6 @@ exports.deleteProject = async (req, res) => {
       return res.status(404).json({ success: false, message: "Project not found" });
     }
 
-    // Cloudinary images delete
     for (const img of project.images) {
       if (img.publicId) {
         try {

@@ -13,6 +13,11 @@ const projectSchema = new mongoose.Schema(
       trim: true,
       // e.g. "Hospital", "Mall", "Shop", "Office", "School"
     },
+    slug: {
+      type: String,
+      unique: true,
+      trim: true,
+    },
     description: {
       type: String,
       default: "",
