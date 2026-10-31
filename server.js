@@ -25,6 +25,7 @@ const deliveryRoutes = require("./routes/deliveryRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 const blogRoutes = require("./routes/blogRoutes");
 const surveyRoutes = require("./routes/surveyRoutes");
+const aiChatRoutes = require("./routes/aiChatRoutes");
 
 app.use(cors());
 
@@ -53,6 +54,8 @@ app.use("/api/delivery", deliveryRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api/survey", surveyRoutes);
+app.use("/api/ai", aiChatRoutes);
+
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
